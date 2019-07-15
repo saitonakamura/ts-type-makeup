@@ -1,0 +1,13 @@
+{
+  "name": "type-visitor",
+  "version": "0.0.1",
+  "main": "index.js",
+  "author": "Saito Nakamura <michael.bashurov@gmail.com>",
+  "license": "MIT",
+  "peerDependencies": {
+    "typescript": "^3.5.2"
+  },
+  "devDependencies": {
+    "typescript": "^3.5.2"
+  }
+}

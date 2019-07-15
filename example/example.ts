@@ -1,4 +1,4 @@
-import * as sps from "../superstruct-transformer";
+import { validate } from "superstruct-transformer";
 
 type User = {
   name: string;
@@ -11,6 +11,6 @@ type Passport = {
   series: string;
 };
 
-export const obj = sps.validate<User>(
+export const obj = validate<User>(
   JSON.parse('{ "name": "Me", "alive": true }')
 );

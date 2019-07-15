@@ -1,86 +1,5 @@
-import ts, { SourceFile, updateNew } from "typescript";
-
-type TypeModels =
-  | TypeModelString
-  | TypeModelBoolean
-  | TypeModelNumber
-  | TypeModelObject
-  | TypeModelUnidentified;
-
-type TypeModelsWithName =
-  | TypeModelString & WithName
-  | TypeModelBoolean & WithName
-  | TypeModelNumber & WithName
-  | TypeModelObject & WithName
-  | TypeModelUnidentified & WithName;
-
-type WithName = {
-  name: string;
-};
-
-type TypeModelString = {
-  kind: "string";
-};
-
-type TypeModelBoolean = {
-  kind: "boolean";
-};
-
-type TypeModelNumber = {
-  kind: "number";
-};
-
-type TypeModelUnidentified = {
-  kind: "unidentified";
-};
-
-type TypeModelObject = {
-  kind: "object";
-  props: Array<TypeModelsWithName>;
-};
-
-type TypeModelKinds = TypeModels["kind"];
-
-const typeVisitor = (
-  checker: ts.TypeChecker,
-  node: ts.Node,
-  type: ts.Type
-): TypeModels => {
-  if (type.flags & ts.TypeFlags.Object) {
-    const props = type.getProperties();
-    const propsDescriptor = props.map(prop => ({
-      name: prop.name,
-      ...typeVisitor(
-        checker,
-        node,
-        checker.getTypeOfSymbolAtLocation(prop, node)
-      )
-    }));
-
-    return {
-      kind: "object",
-      props: propsDescriptor
-    };
-  }
-
-  if (type.flags & ts.TypeFlags.String) {
-    return {
-      kind: "string"
-    };
-  }
-
-  if (type.flags & ts.TypeFlags.Boolean) {
-    return {
-      kind: "boolean"
-    };
-  }
-
-  return {
-    kind: "unidentified"
-  };
-};
-
-const sett = new Set<TypeModels>();
+import ts from "typescript";
+import { TypeModels, typeVisitor } from "type-visitor";
 
 const createSuperStructValidatorObjectLiteral = (
   typeModel: TypeModels
@@ -106,9 +25,13 @@ const createSuperStructValidatorObjectLiteral = (
     case "unidentified":
       return ts.createStringLiteral("string");
   }
+
+  const _exhaustiveCheck: never = typeModel;
 };
 
-const createSuperStructValidator = (typeModel: TypeModels) => {
+const createSuperStructValidator = (tuple: [TypeModels, string]) => {
+  const [typeModel, functionName] = tuple;
+
   const superstructValidator = ts.createCall(
     /* expression */ ts.createIdentifier("struct"),
     /* typeParameters */ undefined,
@@ -141,7 +64,7 @@ const createSuperStructValidator = (typeModel: TypeModels) => {
     /* decorators */ undefined,
     /* modifiers */ undefined,
     /* asteriskToken */ undefined,
-    /* name */ "validate",
+    /* name */ functionName,
     /* typeParameters */ undefined,
     /* parameters */ [
       ts.createParameter(
@@ -162,6 +85,8 @@ const createSuperStructValidator = (typeModel: TypeModels) => {
   // return ts.createDebuggerStatement()
 };
 
+const sett = new Set<[TypeModels, string]>();
+
 const createVisitor = (
   ctx: ts.TransformationContext,
   sf: ts.SourceFile,
@@ -169,13 +94,9 @@ const createVisitor = (
 ) => {
   const visitor: ts.Visitor = (node: ts.Node) => {
     const pass = () => ts.visitEachChild(node, visitor, ctx);
-    // if (ts.isVariableStatement(node)) {
-    //   console.log('AAA')
-    //   return [node, node]
-    // }
-
+    ts.nodeModuleNameResolver;
     if (ts.isSourceFile(node)) {
-      const newFileNode = pass() as SourceFile;
+      const newFileNode = ts.visitEachChild(node, visitor, ctx);
       console.log(sett.size);
       const newValidators = Array.from(sett.values()).map(
         createSuperStructValidator
@@ -188,45 +109,43 @@ const createVisitor = (
       return fileNodeWithValidators;
     }
 
-    // if (counter++ == 0)
+    if (ts.isCallExpression(node)) {
+      if (!node.typeArguments || node.typeArguments.length < 1) {
+        return node;
+      }
 
-    if (!ts.isCallExpression(node)) {
-      return pass();
+      const type = checker.getTypeFromTypeNode(node.typeArguments[0]);
+      const typeModel = typeVisitor(checker, node, type);
+      let newNode: ts.CallExpression;
+
+      if (ts.isPropertyAccessExpression(node.expression)) {
+        newNode = ts.updateCall(
+          /* node */ node,
+          /* expression */ node.expression.name,
+          /* typeArguments */ node.typeArguments,
+          /* arguments */ node.arguments
+        );
+      } else {
+        newNode = node;
+      }
+
+      if (ts.isIdentifier(newNode.expression)) {
+        sett.add([typeModel, newNode.expression.text]);
+      } else {
+        console.warn("newNode.expression should be Identifier");
+        sett.add([typeModel, "validate"]);
+      }
+
+      return newNode;
     }
 
-    if (!node.typeArguments || node.typeArguments.length < 1) {
-      return node;
-    }
-
-    const type = checker.getTypeFromTypeNode(node.typeArguments[0]);
-    // console.log(checker.typeToString(type));
-    const typeModel = typeVisitor(checker, node, type);
-    sett.add(typeModel);
-    // console.log(JSON.stringify(typeModel, undefined, "  "));
-
-    return node;
+    return pass();
   };
 
   return visitor;
 };
 
-function compile(fileNames: string[], options: ts.CompilerOptions): void {
-  let program = ts.createProgram(fileNames, options);
-  let checker = program.getTypeChecker();
-
-  program.emit(undefined, undefined, undefined, undefined, {
-    before: [createTrans(checker)]
-  });
-}
-
-const createTrans = (checker: ts.TypeChecker) => (
+export const createValidatorTransformer = (program: ts.Program) => (
   ctx: ts.TransformationContext
 ): ts.Transformer<ts.SourceFile> => (sf: ts.SourceFile) =>
-  ts.visitNode(sf, createVisitor(ctx, sf, checker));
-
-compile(["./example/example.ts"], {
-  noEmitOnError: false,
-  noImplicitAny: true,
-  target: ts.ScriptTarget.ES5,
-  module: ts.ModuleKind.CommonJS
-});
+  ts.visitNode(sf, createVisitor(ctx, sf, program.getTypeChecker()));
