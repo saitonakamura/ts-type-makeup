@@ -94,7 +94,8 @@ const createSuperStructValidator = (
 
 // const sett = new Set<[TypeModels, string]>();
 
-const typeModels = new Map<ts.SourceFile, TypeModels[]>();
+type CallToImplement = { typeModel: TypeModels; functionName: string };
+const typeModels = new Map<ts.SourceFile, CallToImplement[]>();
 const importedFunctions = new Map<ts.SourceFile, string>();
 
 const findImportedFunctionName = (
@@ -172,16 +173,14 @@ const createVisitor = (
       const newFileNode = ts.visitEachChild(node, visitor, ctx);
 
       const newValidators = flatten(
-        Array.from(typeModels.entries())
-          .filter(([sourceFile, _]) => importedFunctions.has(sourceFile))
-          .map(([sourceFile, typeModels]) =>
-            typeModels.map(typeModel =>
-              createSuperStructValidator(
-                typeModel,
-                importedFunctions.get(sourceFile)!
-              )
+        Array.from(typeModels.values()).map(callsToImplement =>
+          callsToImplement.map(callToImplement =>
+            createSuperStructValidator(
+              callToImplement.typeModel,
+              callToImplement.functionName
             )
           )
+        )
       );
 
       const fileNodeWithValidators = ts.updateSourceFileNode(newFileNode, [
@@ -192,26 +191,50 @@ const createVisitor = (
       return fileNodeWithValidators;
     }
 
-    if (ts.isCallExpression(node)) {
-      if (!node.typeArguments || node.typeArguments.length < 1) {
-        return node;
+    const sourceFile = node.getSourceFile();
+
+    if (importedFunctions.has(sourceFile)) {
+      const functionName = importedFunctions.get(sourceFile)!;
+
+      if (
+        ts.isCallExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        node.expression.text == functionName
+      ) {
+        if (!node.typeArguments || node.typeArguments.length < 1) {
+          return node;
+        }
+
+        const typeToValidateAgainst = checker.getTypeFromTypeNode(
+          node.typeArguments[0]
+        );
+        const typeModel = typeVisitor(checker, node, typeToValidateAgainst);
+        const typeToValidateAgainstStr = checker.typeToString(
+          typeToValidateAgainst
+        );
+
+        const newFunctionName = `${functionName}_${typeToValidateAgainstStr}`;
+
+        const newCallToImplement: CallToImplement = {
+          typeModel,
+          functionName: newFunctionName
+        };
+
+        if (typeModels.has(sourceFile)) {
+          typeModels.set(sourceFile, [
+            ...typeModels.get(sourceFile)!,
+            newCallToImplement
+          ]);
+        } else {
+          typeModels.set(sourceFile, [newCallToImplement]);
+        }
+
+        return ts.createCall(
+          /* expression */ ts.createIdentifier(newFunctionName),
+          /* type argmuents */ undefined,
+          /* arguments */ node.arguments
+        );
       }
-
-      const type = checker.getTypeFromTypeNode(node.typeArguments[0]);
-      const typeModel = typeVisitor(checker, node, type);
-
-      const sourceFile = node.getSourceFile();
-      if (typeModels.has(sourceFile)) {
-        typeModels.set(sourceFile, [...typeModels.get(sourceFile)!, typeModel]);
-      } else {
-        typeModels.set(sourceFile, [typeModel]);
-      }
-
-      return ts.createCall(
-        /* expression */ ts.createIdentifier("validate"),
-        /* type argmuents */ undefined,
-        /* arguments */ node.arguments
-      );
     }
 
     return pass();
