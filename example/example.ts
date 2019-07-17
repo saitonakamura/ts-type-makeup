@@ -14,3 +14,7 @@ type Passport = {
 export const obj = validate<User>(
   JSON.parse('{ "name": "Me", "alive": true }')
 );
+
+// export const obj2 = validate<Passport>(
+//   JSON.parse('{ "name": "Me", "alive": true }')
+// );

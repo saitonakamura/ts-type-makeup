@@ -1,6 +1,9 @@
 import ts from "typescript";
 import { TypeModels, typeVisitor } from "type-visitor";
 
+const flatten = <T>(arr: T[][]) =>
+  arr.reduce((acc, curr) => [...acc, ...curr], []);
+
 const createSuperStructValidatorObjectLiteral = (
   typeModel: TypeModels
 ): ts.ObjectLiteralExpression | ts.StringLiteral => {
@@ -29,11 +32,15 @@ const createSuperStructValidatorObjectLiteral = (
   const _exhaustiveCheck: never = typeModel;
 };
 
-const createSuperStructValidator = (tuple: [TypeModels, string]) => {
-  const [typeModel, functionName] = tuple;
-
+const createSuperStructValidator = (
+  typeModel: TypeModels,
+  functionName: string
+) => {
   const superstructValidator = ts.createCall(
-    /* expression */ ts.createIdentifier("struct"),
+    /* expression */ ts.createPropertyAccess(
+      ts.createIdentifier("superstruct"),
+      "struct"
+    ),
     /* typeParameters */ undefined,
     /* arguments */ [createSuperStructValidatorObjectLiteral(typeModel)]
   );
@@ -85,7 +92,38 @@ const createSuperStructValidator = (tuple: [TypeModels, string]) => {
   // return ts.createDebuggerStatement()
 };
 
-const sett = new Set<[TypeModels, string]>();
+// const sett = new Set<[TypeModels, string]>();
+
+const typeModels = new Map<ts.SourceFile, TypeModels[]>();
+const importedFunctions = new Map<ts.SourceFile, string>();
+
+const findImportedFunctionName = (
+  importClause: ts.ImportClause,
+  nameToSeek: string
+) => {
+  if (
+    !!importClause.namedBindings &&
+    ts.isNamedImports(importClause.namedBindings)
+  ) {
+    const renamedBinding = importClause.namedBindings.elements.find(
+      x => !!x.propertyName && x.propertyName.text == nameToSeek
+    );
+
+    if (!!renamedBinding) {
+      return renamedBinding.name.text;
+    }
+
+    const originalBinding = importClause.namedBindings.elements.find(
+      x => x.name.text == nameToSeek
+    );
+
+    if (!!originalBinding) {
+      return originalBinding.name.text;
+    }
+
+    return null;
+  }
+};
 
 const createVisitor = (
   ctx: ts.TransformationContext,
@@ -94,18 +132,63 @@ const createVisitor = (
 ) => {
   const visitor: ts.Visitor = (node: ts.Node) => {
     const pass = () => ts.visitEachChild(node, visitor, ctx);
-    ts.nodeModuleNameResolver;
+
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.moduleSpecifier.text == "superstruct-transformer" &&
+      !!node.importClause
+    ) {
+      const nameOfImportedFunction = findImportedFunctionName(
+        node.importClause,
+        "validate"
+      );
+
+      if (!!nameOfImportedFunction) {
+        importedFunctions.set(node.getSourceFile(), nameOfImportedFunction);
+      }
+
+      // const superstructStructNamedImport = ts.createNamedImports([
+      //   ts.createImportSpecifier(
+      //     /* propertyName */ undefined,
+      //     /* name */ ts.createIdentifier("struct")
+      //   )
+      // ]);
+
+      const superstructStructImportClause = ts.createImportClause(
+        /* name */ ts.createIdentifier("superstruct"),
+        /* named bindings */ undefined
+      );
+
+      return ts.createImportDeclaration(
+        /* decorators */ node.decorators,
+        /* modifiers */ node.modifiers,
+        /* import clause */ superstructStructImportClause,
+        /* module specifier */ ts.createStringLiteral("superstruct")
+      );
+    }
+
     if (ts.isSourceFile(node)) {
       const newFileNode = ts.visitEachChild(node, visitor, ctx);
-      console.log(sett.size);
-      const newValidators = Array.from(sett.values()).map(
-        createSuperStructValidator
+
+      const newValidators = flatten(
+        Array.from(typeModels.entries())
+          .filter(([sourceFile, _]) => importedFunctions.has(sourceFile))
+          .map(([sourceFile, typeModels]) =>
+            typeModels.map(typeModel =>
+              createSuperStructValidator(
+                typeModel,
+                importedFunctions.get(sourceFile)!
+              )
+            )
+          )
       );
+
       const fileNodeWithValidators = ts.updateSourceFileNode(newFileNode, [
         ...newFileNode.statements,
         ...newValidators
       ]);
-      sett.clear();
+
       return fileNodeWithValidators;
     }
 
@@ -116,27 +199,19 @@ const createVisitor = (
 
       const type = checker.getTypeFromTypeNode(node.typeArguments[0]);
       const typeModel = typeVisitor(checker, node, type);
-      let newNode: ts.CallExpression;
 
-      if (ts.isPropertyAccessExpression(node.expression)) {
-        newNode = ts.updateCall(
-          /* node */ node,
-          /* expression */ node.expression.name,
-          /* typeArguments */ node.typeArguments,
-          /* arguments */ node.arguments
-        );
+      const sourceFile = node.getSourceFile();
+      if (typeModels.has(sourceFile)) {
+        typeModels.set(sourceFile, [...typeModels.get(sourceFile)!, typeModel]);
       } else {
-        newNode = node;
+        typeModels.set(sourceFile, [typeModel]);
       }
 
-      if (ts.isIdentifier(newNode.expression)) {
-        sett.add([typeModel, newNode.expression.text]);
-      } else {
-        console.warn("newNode.expression should be Identifier");
-        sett.add([typeModel, "validate"]);
-      }
-
-      return newNode;
+      return ts.createCall(
+        /* expression */ ts.createIdentifier("validate"),
+        /* type argmuents */ undefined,
+        /* arguments */ node.arguments
+      );
     }
 
     return pass();
