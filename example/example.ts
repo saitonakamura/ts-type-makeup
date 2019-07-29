@@ -2,8 +2,8 @@ import { validate } from "superstruct-transformer";
 
 type User = {
   name: string;
-  alive: boolean;
-  passport: Passport;
+  alive?: boolean;
+  passport?: Passport;
 };
 
 type Passport = {

@@ -1,39 +1,65 @@
 import ts from "typescript";
-import { TypeModels, typeVisitor } from "type-visitor";
+import { TypeModel, typeVisitor } from "type-visitor";
 
 const flatten = <T>(arr: T[][]) =>
   arr.reduce((acc, curr) => [...acc, ...curr], []);
 
 const createSuperStructValidatorObjectLiteral = (
-  typeModel: TypeModels
-): ts.ObjectLiteralExpression | ts.StringLiteral => {
+  typeModel: TypeModel,
+  optional: boolean
+): ts.ObjectLiteralExpression | ts.StringLiteral | ts.CallExpression => {
   switch (typeModel.kind) {
-    case "object":
-      return ts.createObjectLiteral(
-        /* properties */
-        typeModel.props.map(prop =>
-          ts.createPropertyAssignment(
-            prop.name,
-            createSuperStructValidatorObjectLiteral(prop)
-          )
-        ),
-        /* mutiline */ true
-      );
+    case "any":
+      return ts.createStringLiteral("any" + (optional ? "?" : ""));
+    case "unknown":
+      return ts.createStringLiteral("any" + (optional ? "?" : ""));
+    case "enum":
+      // TODO implement enum superstruct
+      throw new Error("implement enum superstruct");
+    case "bigint":
+      return ts.createStringLiteral("number" + (optional ? "?" : ""));
     case "string":
-      return ts.createStringLiteral("string");
+      return ts.createStringLiteral("string" + (optional ? "?" : ""));
     case "number":
-      return ts.createStringLiteral("number");
+      return ts.createStringLiteral("number" + (optional ? "?" : ""));
     case "boolean":
-      return ts.createStringLiteral("boolean");
+      return ts.createStringLiteral("boolean" + (optional ? "?" : ""));
+    case "object":
+      const createObjLiteral = () =>
+        ts.createObjectLiteral(
+          /* properties */
+          typeModel.props.map(prop =>
+            ts.createPropertyAssignment(
+              prop.name,
+              createSuperStructValidatorObjectLiteral(prop, prop.optional)
+            )
+          ),
+          /* multiline */ true
+        );
+      if (optional) {
+        return ts.createCall(
+          ts.createPropertyAccess(
+            ts.createPropertyAccess(
+              ts.createIdentifier("superstruct"),
+              "struct"
+            ),
+            "optional"
+          ),
+          /* type arguments */ undefined,
+          /* arguments */ [createObjLiteral()]
+        );
+      } else {
+        return createObjLiteral();
+      }
     case "unidentified":
-      return ts.createStringLiteral("string");
+      return ts.createStringLiteral("any");
   }
 
   const _exhaustiveCheck: never = typeModel;
 };
 
 const createSuperStructValidator = (
-  typeModel: TypeModels,
+  typeModel: TypeModel,
   functionName: string
 ) => {
   const superstructValidator = ts.createCall(
@@ -42,7 +68,9 @@ const createSuperStructValidator = (
       "struct"
     ),
     /* typeParameters */ undefined,
-    /* arguments */ [createSuperStructValidatorObjectLiteral(typeModel)]
+    /* arguments */ [
+      createSuperStructValidatorObjectLiteral(typeModel, /* optional */ false)
+    ]
   );
 
   const superstructValidatorVariable = ts.createVariableStatement(
@@ -94,7 +122,7 @@ const createSuperStructValidator = (
 
 // const sett = new Set<[TypeModels, string]>();
 
-type CallToImplement = { typeModel: TypeModels; functionName: string };
+type CallToImplement = { typeModel: TypeModel; functionName: string };
 const typeModels = new Map<ts.SourceFile, CallToImplement[]>();
 const importedFunctions = new Map<ts.SourceFile, string>();
 
@@ -208,7 +236,7 @@ const createVisitor = (
         const typeToValidateAgainst = checker.getTypeFromTypeNode(
           node.typeArguments[0]
         );
-        const typeModel = typeVisitor(checker, node, typeToValidateAgainst);
+        const typeModel = typeVisitor(checker, typeToValidateAgainst);
         const typeToValidateAgainstStr = checker.typeToString(
           typeToValidateAgainst
         );

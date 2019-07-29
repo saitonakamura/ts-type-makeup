@@ -5,11 +5,11 @@ export var obj2 = validate_Passport(JSON.parse('{ "number": 123, "series": 321 }
 function validate_User(jsonObj) {
     var validator = superstruct.struct({
         name: "string",
-        alive: "boolean",
-        passport: {
+        alive: "boolean?",
+        passport: superstruct.struct.optional({
             number: "string",
             series: "string"
-        }
+        })
     });
     return validator(jsonObj);
 }

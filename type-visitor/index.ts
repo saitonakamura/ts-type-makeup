@@ -1,33 +1,57 @@
-import { Node, TypeChecker, Type, TypeFlags } from "typescript";
+import { Node, TypeChecker, Type, TypeFlags, SymbolFlags } from "typescript";
 
-export type TypeModels =
+export type TypeModel =
   | TypeModelString
   | TypeModelBoolean
   | TypeModelNumber
   | TypeModelObject
-  | TypeModelUnidentified;
+  | TypeModelUnidentified
+  | TypeModelAny
+  | TypeModelUnknown
+  | TypeModelEnum
+  | TypeModelBigInt;
 
-export type TypeModelsWithName =
-  | TypeModelString & WithName
-  | TypeModelBoolean & WithName
-  | TypeModelNumber & WithName
-  | TypeModelObject & WithName
-  | TypeModelUnidentified & WithName;
+type MapWithIntersect<TOrig, TAdd> = TOrig extends any ? TOrig & TAdd : never;
 
-export type WithName = {
+export type TypeModelWithPropFields = MapWithIntersect<TypeModel, PropFields>;
+
+export type PropFields = {
   name: string;
+  optional: boolean;
+};
+
+export type TypeModelAny = {
+  kind: "any";
+};
+
+export type TypeModelUnknown = {
+  kind: "unknown";
 };
 
 export type TypeModelString = {
   kind: "string";
 };
 
+export type TypeModelNumber = {
+  kind: "number";
+};
+
 export type TypeModelBoolean = {
   kind: "boolean";
 };
 
-export type TypeModelNumber = {
-  kind: "number";
+export type TypeModelEnum = {
+  kind: "enum";
+  // TODO Any other info for enum
+};
+
+export type TypeModelBigInt = {
+  kind: "bigint";
+};
+
+export type TypeModelStringLiteral = {
+  kind: "stringLiteral";
+  value: string;
 };
 
 export type TypeModelUnidentified = {
@@ -36,24 +60,51 @@ export type TypeModelUnidentified = {
 
 export type TypeModelObject = {
   kind: "object";
-  props: Array<TypeModelsWithName>;
+  props: Array<TypeModelWithPropFields>;
 };
 
-export type TypeModelKinds = TypeModels["kind"];
+export type TypeModelKinds = TypeModel["kind"];
 
-export const typeVisitor = (
-  checker: TypeChecker,
-  node: Node,
-  type: Type
-): TypeModels => {
+export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
+  if (type.flags & TypeFlags.Any) {
+    return {
+      kind: "any"
+    };
+  }
+
+  if (type.flags & TypeFlags.Unknown) {
+    return {
+      kind: "unknown"
+    };
+  }
+
+  if (type.flags & TypeFlags.Enum) {
+    return {
+      kind: "enum"
+      // TODO any other info for enum
+    };
+  }
+
+  if (type.flags & TypeFlags.BigInt) {
+    return {
+      kind: "bigint"
+    };
+  }
+
+  if (type.flags & TypeFlags.BigInt) {
+    return {
+      kind: "bigint"
+    };
+  }
+
   if (type.flags & TypeFlags.Object) {
     const props = type.getProperties();
     const propsDescriptor = props.map(prop => ({
       name: prop.name,
+      optional: !!(prop.flags & SymbolFlags.Optional),
       ...typeVisitor(
         checker,
-        node,
-        checker.getTypeOfSymbolAtLocation(prop, node)
+        checker.getTypeOfSymbolAtLocation(prop, prop.valueDeclaration)
       )
     }));
 
@@ -72,6 +123,12 @@ export const typeVisitor = (
   if (type.flags & TypeFlags.Boolean) {
     return {
       kind: "boolean"
+    };
+  }
+
+  if (type.flags & TypeFlags.Number) {
+    return {
+      kind: "number"
     };
   }
 
