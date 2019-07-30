@@ -4,27 +4,114 @@ import { TypeModel, typeVisitor } from "type-visitor";
 const flatten = <T>(arr: T[][]) =>
   arr.reduce((acc, curr) => [...acc, ...curr], []);
 
+const createSuperStructDotStructPropAccess = () =>
+  ts.createPropertyAccess(ts.createIdentifier("superstruct"), "struct");
+
+type SuperstructType =
+  | "any"
+  | "arguments"
+  | "array"
+  | "boolean"
+  | "buffer"
+  | "date"
+  | "error"
+  | "function"
+  | "generatorfunction"
+  | "map"
+  | "null"
+  | "number"
+  | "object"
+  | "promise"
+  | "regexp"
+  | "set"
+  | "string"
+  | "symbol"
+  | "undefined"
+  | "weakmap"
+  | "weakset";
+
+const createSuperstructLiteral = ({
+  type: name,
+  optional
+}: {
+  type: SuperstructType;
+  optional: boolean;
+}) => ts.createStringLiteral(name + (optional ? "?" : ""));
+
+const createSuperstructCall = ({
+  func,
+  args
+}: {
+  func: string;
+  args: ts.Expression[] | undefined;
+}) =>
+  ts.createCall(
+    ts.createPropertyAccess(createSuperStructDotStructPropAccess(), func),
+    /* type args */ undefined,
+    /* args */ args
+  );
+
 const createSuperStructValidatorObjectLiteral = (
   typeModel: TypeModel,
   optional: boolean
 ): ts.ObjectLiteralExpression | ts.StringLiteral | ts.CallExpression => {
   switch (typeModel.kind) {
     case "any":
-      return ts.createStringLiteral("any" + (optional ? "?" : ""));
     case "unknown":
-      return ts.createStringLiteral("any" + (optional ? "?" : ""));
+    case "esSymbol": // ES symbols can't be represented in json
+    case "uniqueEsSymbol":
+    case "void": // void can't be represented in json
+      return createSuperstructLiteral({ type: "any", optional });
+
     case "enum":
       // TODO implement enum superstruct
       throw new Error("implement enum superstruct");
+
     case "bigint":
-      return ts.createStringLiteral("number" + (optional ? "?" : ""));
+      return createSuperstructLiteral({ type: "number", optional });
+
     case "string":
-      return ts.createStringLiteral("string" + (optional ? "?" : ""));
+      return createSuperstructLiteral({ type: "string", optional });
+
     case "number":
-      return ts.createStringLiteral("number" + (optional ? "?" : ""));
+      return createSuperstructLiteral({ type: "number", optional });
+
     case "boolean":
-      return ts.createStringLiteral("boolean" + (optional ? "?" : ""));
-    case "object":
+      return createSuperstructLiteral({ type: "boolean", optional });
+
+    case "stringLiteral":
+      return createSuperstructCall({
+        func: "literal",
+        args: [ts.createLiteral(typeModel.value)]
+      });
+
+    case "numberLiteral":
+      return createSuperstructCall({
+        func: "literal",
+        args: [ts.createLiteral(typeModel.value)]
+      });
+
+    case "booleanLiteral":
+      return createSuperstructCall({
+        func: "literal",
+        args: [ts.createLiteral(typeModel.value)]
+      });
+
+    case "enumLiteral":
+      // TODO implement enum literal superstruct
+      throw new Error("implement enum literal superstruct");
+
+    case "bigintLiteral":
+      // TODO implement bigint literal superstruct
+      throw new Error("implement bigint literal superstruct");
+
+    case "undefined":
+      return createSuperstructLiteral({ type: "undefined", optional });
+
+    case "null":
+      return createSuperstructLiteral({ type: "null", optional });
+
+    case "object": {
       const createObjLiteral = () =>
         ts.createObjectLiteral(
           /* properties */
@@ -36,13 +123,11 @@ const createSuperStructValidatorObjectLiteral = (
           ),
           /* multiline */ true
         );
+
       if (optional) {
         return ts.createCall(
           ts.createPropertyAccess(
-            ts.createPropertyAccess(
-              ts.createIdentifier("superstruct"),
-              "struct"
-            ),
+            createSuperStructDotStructPropAccess(),
             "optional"
           ),
           /* type arguments */ undefined,
@@ -51,6 +136,8 @@ const createSuperStructValidatorObjectLiteral = (
       } else {
         return createObjLiteral();
       }
+    }
+
     case "unidentified":
       return ts.createStringLiteral("any");
   }
@@ -63,10 +150,7 @@ const createSuperStructValidator = (
   functionName: string
 ) => {
   const superstructValidator = ts.createCall(
-    /* expression */ ts.createPropertyAccess(
-      ts.createIdentifier("superstruct"),
-      "struct"
-    ),
+    /* expression */ createSuperStructDotStructPropAccess(),
     /* typeParameters */ undefined,
     /* arguments */ [
       createSuperStructValidatorObjectLiteral(typeModel, /* optional */ false)

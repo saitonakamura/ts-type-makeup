@@ -17,7 +17,6 @@ import { validate } from "superstruct-transformer";
 type User = {
   name: string;
   alive: boolean;
-  passport: Passport;
 };
 
 const obj = validate<User>(JSON.parse('{ "name": "Me", "alive": true }'));
@@ -32,11 +31,7 @@ var obj = validate_User(JSON.parse('{ "name": "Me", "alive": true }'));
 function validate_User(jsonObj) {
   var validator = superstruct.struct({
     name: "string",
-    alive: "boolean",
-    passport: {
-      number: "string",
-      series: "string"
-    }
+    alive: "boolean"
   });
   return validator(jsonObj);
 }

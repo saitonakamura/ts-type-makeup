@@ -1,4 +1,4 @@
-import { Node, TypeChecker, Type, TypeFlags, SymbolFlags } from "typescript";
+import { TypeChecker, Type, TypeFlags, SymbolFlags } from "typescript";
 
 export type TypeModel =
   | TypeModelString
@@ -9,59 +9,109 @@ export type TypeModel =
   | TypeModelAny
   | TypeModelUnknown
   | TypeModelEnum
-  | TypeModelBigInt;
+  | TypeModelBigInt
+  | TypeModelStringLiteral
+  | TypeModelNumberLiteral
+  | TypeModelBooleanLiteral
+  | TypeModelEnumLiteral
+  | TypeModelBigIntLiteral
+  | TypeModelESSymbol
+  | TypeModelUniqueESSymbol
+  | TypeModelVoid
+  | TypeModelUndefined
+  | TypeModelNull;
 
 type MapWithIntersect<TOrig, TAdd> = TOrig extends any ? TOrig & TAdd : never;
 
 export type TypeModelWithPropFields = MapWithIntersect<TypeModel, PropFields>;
 
-export type PropFields = {
-  name: string;
-  optional: boolean;
-};
+export interface PropFields {
+  readonly name: string;
+  readonly optional: boolean;
+}
 
-export type TypeModelAny = {
-  kind: "any";
-};
+export interface TypeModelAny {
+  readonly kind: "any";
+}
 
-export type TypeModelUnknown = {
-  kind: "unknown";
-};
+export interface TypeModelUnknown {
+  readonly kind: "unknown";
+}
 
-export type TypeModelString = {
-  kind: "string";
-};
+export interface TypeModelString {
+  readonly kind: "string";
+}
 
-export type TypeModelNumber = {
-  kind: "number";
-};
+export interface TypeModelNumber {
+  readonly kind: "number";
+}
 
-export type TypeModelBoolean = {
-  kind: "boolean";
-};
+export interface TypeModelBoolean {
+  readonly kind: "boolean";
+}
 
-export type TypeModelEnum = {
-  kind: "enum";
+export interface TypeModelEnum {
+  readonly kind: "enum";
   // TODO Any other info for enum
-};
+}
 
-export type TypeModelBigInt = {
-  kind: "bigint";
-};
+export interface TypeModelBigInt {
+  readonly kind: "bigint";
+}
 
-export type TypeModelStringLiteral = {
-  kind: "stringLiteral";
-  value: string;
-};
+export interface TypeModelStringLiteral {
+  readonly kind: "stringLiteral";
+  readonly value: string;
+}
 
-export type TypeModelUnidentified = {
-  kind: "unidentified";
-};
+export interface TypeModelNumberLiteral {
+  readonly kind: "numberLiteral";
+  readonly value: number;
+}
 
-export type TypeModelObject = {
-  kind: "object";
-  props: Array<TypeModelWithPropFields>;
-};
+export interface TypeModelBooleanLiteral {
+  readonly kind: "booleanLiteral";
+  readonly value: boolean;
+}
+
+export interface TypeModelEnumLiteral {
+  readonly kind: "enumLiteral";
+  readonly value: any; // TODO implement enum literal
+}
+
+export interface TypeModelBigIntLiteral {
+  readonly kind: "bigintLiteral";
+  readonly value: BigInt;
+}
+
+export interface TypeModelESSymbol {
+  readonly kind: "esSymbol";
+}
+
+export interface TypeModelUniqueESSymbol {
+  readonly kind: "uniqueEsSymbol";
+}
+
+export interface TypeModelVoid {
+  readonly kind: "void";
+}
+
+export interface TypeModelUndefined {
+  readonly kind: "undefined";
+}
+
+export interface TypeModelNull {
+  readonly kind: "null";
+}
+
+export interface TypeModelUnidentified {
+  readonly kind: "unidentified";
+}
+
+export interface TypeModelObject {
+  readonly kind: "object";
+  readonly props: Array<TypeModelWithPropFields>;
+}
 
 export type TypeModelKinds = TypeModel["kind"];
 
@@ -91,9 +141,74 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     };
   }
 
-  if (type.flags & TypeFlags.BigInt) {
+  if (type.isStringLiteral()) {
     return {
-      kind: "bigint"
+      kind: "stringLiteral",
+      value: type.value
+    };
+  }
+
+  if (type.isNumberLiteral()) {
+    return {
+      kind: "numberLiteral",
+      value: type.value
+    };
+  }
+
+  if (type.flags & TypeFlags.BooleanLiteral) {
+    // TODO implement handle boolean literal
+    throw new Error("implement handle boolean literal");
+    // return {
+    //   kind: "booleanLiteral",
+    //   value: type.value
+    // };
+  }
+
+  if (type.flags & TypeFlags.EnumLiteral) {
+    // TODO implement handle enum literal
+    throw new Error("implement handle enum literal");
+    // return {
+    //   kind: "enumLiteral",
+    //   value: type.value
+    // };
+  }
+
+  if (type.flags & TypeFlags.BigIntLiteral) {
+    // TODO implement handle bigint literal
+    throw new Error("implement handle bigint literal");
+    // return {
+    //   kind: "bigintLiteral",
+    //   value: type.value
+    // };
+  }
+
+  if (type.flags & TypeFlags.ESSymbol) {
+    return {
+      kind: "esSymbol"
+    };
+  }
+
+  if (type.flags & TypeFlags.UniqueESSymbol) {
+    return {
+      kind: "uniqueEsSymbol"
+    };
+  }
+
+  if (type.flags & TypeFlags.Void) {
+    return {
+      kind: "void"
+    };
+  }
+
+  if (type.flags & TypeFlags.Undefined) {
+    return {
+      kind: "undefined"
+    };
+  }
+
+  if (type.flags & TypeFlags.Null) {
+    return {
+      kind: "null"
     };
   }
 
