@@ -9,8 +9,8 @@ function validate_User(jsonObj) {
         passport: superstruct.struct.optional({
             number: "string",
             series: "string",
-            type: superstruct.struct.literal("type-literal"),
-            typeN: superstruct.struct.literal(123)
+            type: superstruct.struct.union(superstruct.struct.literal("russian"), superstruct.struct.literal("foreign")),
+            typeN: superstruct.struct.optional(superstruct.struct.literal(123))
         })
     });
     return validator(jsonObj);
@@ -19,8 +19,8 @@ function validate_Passport(jsonObj) {
     var validator = superstruct.struct({
         number: "string",
         series: "string",
-        type: superstruct.struct.literal("type-literal"),
-        typeN: superstruct.struct.literal(123)
+        type: superstruct.struct.union(superstruct.struct.literal("russian"), superstruct.struct.literal("foreign")),
+        typeN: superstruct.struct.optional(superstruct.struct.literal(123))
     });
     return validator(jsonObj);
 }

@@ -30,6 +30,25 @@ type SuperstructType =
   | "weakmap"
   | "weakset";
 
+type SuperstructFunc =
+  | "any"
+  | "dict"
+  | "enum"
+  | "function"
+  | "instance"
+  | "interface"
+  | "intersection"
+  | "lazy"
+  | "dynamic"
+  | "list"
+  | "literal"
+  | "object"
+  | "optional"
+  | "partial"
+  | "scalar"
+  | "tuple"
+  | "union";
+
 const createSuperstructLiteral = ({
   type: name,
   optional
@@ -38,11 +57,20 @@ const createSuperstructLiteral = ({
   optional: boolean;
 }) => ts.createStringLiteral(name + (optional ? "?" : ""));
 
+const wrapOptional = ({
+  exp,
+  optional
+}: {
+  exp: ts.Expression;
+  optional: boolean;
+}) =>
+  optional ? createSuperstructCall({ func: "optional", args: [exp] }) : exp;
+
 const createSuperstructCall = ({
   func,
   args
 }: {
-  func: string;
+  func: SuperstructFunc;
   args: ts.Expression[] | undefined;
 }) =>
   ts.createCall(
@@ -51,16 +79,18 @@ const createSuperstructCall = ({
     /* args */ args
   );
 
-const createSuperStructValidatorObjectLiteral = (
+const createSuperStructValidatorForm = (
   typeModel: TypeModel,
   optional: boolean
-): ts.ObjectLiteralExpression | ts.StringLiteral | ts.CallExpression => {
+): ts.Expression => {
   switch (typeModel.kind) {
     case "any":
     case "unknown":
     case "esSymbol": // ES symbols can't be represented in json
     case "uniqueEsSymbol":
     case "void": // void can't be represented in json
+    case "never": // never can't be represented in json
+    case "typeParameter": // type parameter can't be represented in json
       return createSuperstructLiteral({ type: "any", optional });
 
     case "enum":
@@ -80,21 +110,30 @@ const createSuperStructValidatorObjectLiteral = (
       return createSuperstructLiteral({ type: "boolean", optional });
 
     case "stringLiteral":
-      return createSuperstructCall({
-        func: "literal",
-        args: [ts.createLiteral(typeModel.value)]
+      return wrapOptional({
+        exp: createSuperstructCall({
+          func: "literal",
+          args: [ts.createLiteral(typeModel.value)]
+        }),
+        optional
       });
 
     case "numberLiteral":
-      return createSuperstructCall({
-        func: "literal",
-        args: [ts.createLiteral(typeModel.value)]
+      return wrapOptional({
+        exp: createSuperstructCall({
+          func: "literal",
+          args: [ts.createLiteral(typeModel.value)]
+        }),
+        optional
       });
 
     case "booleanLiteral":
-      return createSuperstructCall({
-        func: "literal",
-        args: [ts.createLiteral(typeModel.value)]
+      return wrapOptional({
+        exp: createSuperstructCall({
+          func: "literal",
+          args: [ts.createLiteral(typeModel.value)]
+        }),
+        optional
       });
 
     case "enumLiteral":
@@ -112,31 +151,42 @@ const createSuperStructValidatorObjectLiteral = (
       return createSuperstructLiteral({ type: "null", optional });
 
     case "object": {
-      const createObjLiteral = () =>
-        ts.createObjectLiteral(
+      return wrapOptional({
+        exp: ts.createObjectLiteral(
           /* properties */
           typeModel.props.map(prop =>
             ts.createPropertyAssignment(
               prop.name,
-              createSuperStructValidatorObjectLiteral(prop, prop.optional)
+              createSuperStructValidatorForm(prop, prop.optional)
             )
           ),
           /* multiline */ true
-        );
-
-      if (optional) {
-        return ts.createCall(
-          ts.createPropertyAccess(
-            createSuperStructDotStructPropAccess(),
-            "optional"
-          ),
-          /* type arguments */ undefined,
-          /* arguments */ [createObjLiteral()]
-        );
-      } else {
-        return createObjLiteral();
-      }
+        ),
+        optional
+      });
     }
+
+    case "union":
+      return wrapOptional({
+        exp: createSuperstructCall({
+          func: "union",
+          args: typeModel.types.map(t =>
+            createSuperStructValidatorForm(t, false)
+          )
+        }),
+        optional
+      });
+
+    case "intersection":
+      return wrapOptional({
+        exp: createSuperstructCall({
+          func: "intersection",
+          args: typeModel.types.map(t =>
+            createSuperStructValidatorForm(t, false)
+          )
+        }),
+        optional
+      });
 
     case "unidentified":
       return ts.createStringLiteral("any");
@@ -153,7 +203,7 @@ const createSuperStructValidator = (
     /* expression */ createSuperStructDotStructPropAccess(),
     /* typeParameters */ undefined,
     /* arguments */ [
-      createSuperStructValidatorObjectLiteral(typeModel, /* optional */ false)
+      createSuperStructValidatorForm(typeModel, /* optional */ false)
     ]
   );
 

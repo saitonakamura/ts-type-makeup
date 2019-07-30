@@ -19,7 +19,11 @@ export type TypeModel =
   | TypeModelUniqueESSymbol
   | TypeModelVoid
   | TypeModelUndefined
-  | TypeModelNull;
+  | TypeModelNull
+  | TypeModelNever
+  | TypeModelTypeParameter
+  | TypeModelUnion
+  | TypeModelIntersection;
 
 type MapWithIntersect<TOrig, TAdd> = TOrig extends any ? TOrig & TAdd : never;
 
@@ -104,6 +108,24 @@ export interface TypeModelNull {
   readonly kind: "null";
 }
 
+export interface TypeModelNever {
+  readonly kind: "never";
+}
+
+export interface TypeModelTypeParameter {
+  readonly kind: "typeParameter";
+}
+
+export interface TypeModelUnion {
+  readonly kind: "union";
+  readonly types: TypeModel[];
+}
+
+export interface TypeModelIntersection {
+  readonly kind: "intersection";
+  readonly types: TypeModel[];
+}
+
 export interface TypeModelUnidentified {
   readonly kind: "unidentified";
 }
@@ -125,6 +147,24 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
   if (type.flags & TypeFlags.Unknown) {
     return {
       kind: "unknown"
+    };
+  }
+
+  if (type.flags & TypeFlags.String) {
+    return {
+      kind: "string"
+    };
+  }
+
+  if (type.flags & TypeFlags.Boolean) {
+    return {
+      kind: "boolean"
+    };
+  }
+
+  if (type.flags & TypeFlags.Number) {
+    return {
+      kind: "number"
     };
   }
 
@@ -212,6 +252,18 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     };
   }
 
+  if (type.flags & TypeFlags.Never) {
+    return {
+      kind: "never"
+    };
+  }
+
+  if (type.flags & TypeFlags.TypeParameter) {
+    return {
+      kind: "typeParameter"
+    };
+  }
+
   if (type.flags & TypeFlags.Object) {
     const props = type.getProperties();
     const propsDescriptor = props.map(prop => ({
@@ -229,21 +281,17 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     };
   }
 
-  if (type.flags & TypeFlags.String) {
+  if (type.isUnion()) {
     return {
-      kind: "string"
+      kind: "union",
+      types: type.types.map(t => typeVisitor(checker, t))
     };
   }
 
-  if (type.flags & TypeFlags.Boolean) {
+  if (type.isIntersection()) {
     return {
-      kind: "boolean"
-    };
-  }
-
-  if (type.flags & TypeFlags.Number) {
-    return {
-      kind: "number"
+      kind: "intersection",
+      types: type.types.map(t => typeVisitor(checker, t))
     };
   }
 

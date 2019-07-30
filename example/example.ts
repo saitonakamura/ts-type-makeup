@@ -9,8 +9,8 @@ type User = {
 type Passport = {
   number: string;
   series: string;
-  type: "type-literal";
-  typeN: 123;
+  type: "russian" | "foreign";
+  typeN?: 123;
 };
 
 export const what = Array.isArray([1, 2, 3]);
