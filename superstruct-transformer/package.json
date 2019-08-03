@@ -4,6 +4,9 @@
   "main": "index.js",
   "author": "Saito Nakamura <michael.bashurov@gmail.com>",
   "license": "MIT",
+  "scripts": {
+    "test": "tape -r ts-node/register tests/*.test.js | faucet"
+  },
   "dependencies": {
     "@types/superstruct": "^0.5.0",
     "superstruct": "^0.6.1"
@@ -12,6 +15,10 @@
     "typescript": "^3.5.2"
   },
   "devDependencies": {
+    "faucet": "^0.0.1",
+    "node-eval": "^2.0.0",
+    "tape": "^4.11.0",
+    "ts-node": "^8.3.0",
     "typescript": "^3.5.2"
   }
 }

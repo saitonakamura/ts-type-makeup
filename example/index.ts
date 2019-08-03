@@ -13,5 +13,5 @@ compile(["./example/example.ts"], {
   noEmitOnError: false,
   noImplicitAny: true,
   target: ts.ScriptTarget.ES5,
-  module: ts.ModuleKind.ESNext
+  module: ts.ModuleKind.CommonJS
 });

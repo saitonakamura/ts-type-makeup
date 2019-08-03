@@ -23,7 +23,12 @@ export type TypeModel =
   | TypeModelNever
   | TypeModelTypeParameter
   | TypeModelUnion
-  | TypeModelIntersection;
+  | TypeModelIntersection
+  | TypeModelIndex
+  | TypeModelIndexedAccess
+  | TypeModelConditional
+  | TypeModelSubstitution
+  | TypeModelNonPrimitive;
 
 type MapWithIntersect<TOrig, TAdd> = TOrig extends any ? TOrig & TAdd : never;
 
@@ -126,6 +131,26 @@ export interface TypeModelIntersection {
   readonly types: TypeModel[];
 }
 
+export interface TypeModelIndex {
+  readonly kind: "index";
+}
+
+export interface TypeModelIndexedAccess {
+  readonly kind: "indexedAccess";
+}
+
+export interface TypeModelConditional {
+  readonly kind: "conditional";
+}
+
+export interface TypeModelSubstitution {
+  readonly kind: "substitution";
+}
+
+export interface TypeModelNonPrimitive {
+  readonly kind: "nonPrimitive";
+}
+
 export interface TypeModelUnidentified {
   readonly kind: "unidentified";
 }
@@ -150,32 +175,32 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     };
   }
 
-  if (type.flags & TypeFlags.String) {
+  if (type.flags & TypeFlags.String || type.flags & TypeFlags.StringLike) {
     return {
       kind: "string"
     };
   }
 
-  if (type.flags & TypeFlags.Boolean) {
+  if (type.flags & TypeFlags.Boolean || type.flags & TypeFlags.BooleanLike) {
     return {
       kind: "boolean"
     };
   }
 
-  if (type.flags & TypeFlags.Number) {
+  if (type.flags & TypeFlags.Number || type.flags & TypeFlags.NumberLike) {
     return {
       kind: "number"
     };
   }
 
-  if (type.flags & TypeFlags.Enum) {
+  if (type.flags & TypeFlags.Enum || type.flags & TypeFlags.EnumLike) {
     return {
       kind: "enum"
       // TODO any other info for enum
     };
   }
 
-  if (type.flags & TypeFlags.BigInt) {
+  if (type.flags & TypeFlags.BigInt || type.flags & TypeFlags.BigIntLike) {
     return {
       kind: "bigint"
     };
@@ -222,7 +247,7 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     // };
   }
 
-  if (type.flags & TypeFlags.ESSymbol) {
+  if (type.flags & TypeFlags.ESSymbol || type.flags & TypeFlags.ESSymbolLike) {
     return {
       kind: "esSymbol"
     };
@@ -234,7 +259,7 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     };
   }
 
-  if (type.flags & TypeFlags.Void) {
+  if (type.flags & TypeFlags.Void || type.flags & TypeFlags.VoidLike) {
     return {
       kind: "void"
     };
@@ -292,6 +317,36 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     return {
       kind: "intersection",
       types: type.types.map(t => typeVisitor(checker, t))
+    };
+  }
+
+  if (type.flags & TypeFlags.Index) {
+    return {
+      kind: "index"
+    };
+  }
+
+  if (type.flags & TypeFlags.IndexedAccess) {
+    return {
+      kind: "indexedAccess"
+    };
+  }
+
+  if (type.flags & TypeFlags.Conditional) {
+    return {
+      kind: "conditional"
+    };
+  }
+
+  if (type.flags & TypeFlags.Substitution) {
+    return {
+      kind: "substitution"
+    };
+  }
+
+  if (type.flags & TypeFlags.NonPrimitive) {
+    return {
+      kind: "nonPrimitive"
     };
   }
 

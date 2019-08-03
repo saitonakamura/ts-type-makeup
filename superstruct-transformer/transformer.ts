@@ -170,9 +170,11 @@ const createSuperStructValidatorForm = (
       return wrapOptional({
         exp: createSuperstructCall({
           func: "union",
-          args: typeModel.types.map(t =>
-            createSuperStructValidatorForm(t, false)
-          )
+          args: [
+            ts.createArrayLiteral(
+              typeModel.types.map(t => createSuperStructValidatorForm(t, false))
+            )
+          ]
         }),
         optional
       });
@@ -181,12 +183,34 @@ const createSuperStructValidatorForm = (
       return wrapOptional({
         exp: createSuperstructCall({
           func: "intersection",
-          args: typeModel.types.map(t =>
-            createSuperStructValidatorForm(t, false)
-          )
+          args: [
+            ts.createArrayLiteral(
+              typeModel.types.map(t => createSuperStructValidatorForm(t, false))
+            )
+          ]
         }),
         optional
       });
+
+    case "index":
+      // TODO implement index superstruct
+      throw new Error("implement index superstruct");
+
+    case "indexedAccess":
+      // TODO implement indexedAccess superstruct
+      throw new Error("implement indexedAccess superstruct");
+
+    case "conditional":
+      // TODO implement conditional superstruct
+      throw new Error("implement conditional superstruct");
+
+    case "substitution":
+      // TODO implement substitution superstruct
+      throw new Error("implement substitution superstruct");
+
+    case "nonPrimitive":
+      // TODO implement nonPrimitive superstruct
+      throw new Error("implement nonPrimitive superstruct");
 
     case "unidentified":
       return ts.createStringLiteral("any");
@@ -323,12 +347,38 @@ const createVisitor = (
         /* named bindings */ undefined
       );
 
-      return ts.createImportDeclaration(
-        /* decorators */ node.decorators,
-        /* modifiers */ node.modifiers,
-        /* import clause */ superstructStructImportClause,
-        /* module specifier */ ts.createStringLiteral("superstruct")
-      );
+      const moduleTarget = ctx.getCompilerOptions().module;
+
+      if (moduleTarget === ts.ModuleKind.CommonJS) {
+        return ts.createVariableStatement(
+          /* modifiers */ [ts.createModifier(ts.SyntaxKind.ConstKeyword)],
+          /* declarations */ [
+            ts.createVariableDeclaration(
+              /* name  */ "superstruct",
+              /* type */ undefined,
+              /* initializer */ ts.createCall(
+                /* expression */ ts.createIdentifier("require"),
+                /* type args */ undefined,
+                /* args */ [ts.createLiteral("superstruct")]
+              )
+            )
+          ]
+        );
+      } else if (
+        moduleTarget === ts.ModuleKind.ES2015 ||
+        moduleTarget === ts.ModuleKind.ESNext
+      ) {
+        return ts.createImportDeclaration(
+          /* decorators */ node.decorators,
+          /* modifiers */ node.modifiers,
+          /* import clause */ superstructStructImportClause,
+          /* module specifier */ ts.createStringLiteral("superstruct")
+        );
+      } else {
+        throw new Error(
+          "superstruct-transformer doesn't support module targets other than CommonJS and ES2015+"
+        );
+      }
     }
 
     if (ts.isSourceFile(node)) {

@@ -41,7 +41,7 @@ function validate_User(jsonObj) {
 
 - You can't use babel-only transpilation (you can use babel, but you need to compile by typescript first)
 - You can't use `tsc`, because `tsc` doesn't support custom transformers
-- You can't module targets other that `es2016` and `esnext`
+- You can't module targets other that `CommonJS`, `es2015` and `esnext`
 
 ## Type visitor
 

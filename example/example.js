@@ -1,17 +1,19 @@
-import superstruct from "superstruct";
-export var what = Array.isArray([1, 2, 3]);
-export var obj = validate_User(JSON.parse('{ "name": "Me", "alive": true }'));
-export var obj2 = validate_Passport(JSON.parse('{ "number": 123, "series": 321 }'));
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var superstruct = require("superstruct");
+exports.what = Array.isArray([1, 2, 3]);
+exports.obj = validate_User(JSON.parse('{ "name": "Me", "alive": true }'));
+exports.obj2 = validate_Passport(JSON.parse('{ "number": 123, "series": 321 }'));
 function validate_User(jsonObj) {
     var validator = superstruct.struct({
         name: "string",
         alive: "boolean?",
-        passport: superstruct.struct.optional({
+        passport: {
             number: "string",
             series: "string",
-            type: superstruct.struct.union(superstruct.struct.literal("russian"), superstruct.struct.literal("foreign")),
-            typeN: superstruct.struct.optional(superstruct.struct.literal(123))
-        })
+            type: superstruct.struct.union(["string", "string"]),
+            typeN: "number?"
+        }
     });
     return validator(jsonObj);
 }
@@ -19,8 +21,8 @@ function validate_Passport(jsonObj) {
     var validator = superstruct.struct({
         number: "string",
         series: "string",
-        type: superstruct.struct.union(superstruct.struct.literal("russian"), superstruct.struct.literal("foreign")),
-        typeN: superstruct.struct.optional(superstruct.struct.literal(123))
+        type: superstruct.struct.union(["string", "string"]),
+        typeN: "number?"
     });
     return validator(jsonObj);
 }
