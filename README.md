@@ -1,5 +1,8 @@
 # Typescript makeup aka Compile-time type-based emitters
 
+<img src="/logo.svg" align="right"
+     alt="Blue lipstick with a TS on it" height="180">
+
 The idea of the project is that since we don't have an access to typescript types in the runtime (they're a subject to a type erasure), we can still emit some code to the runtime on compilation step. So this repository purpose is to
 
 1. Brigde the gap between the idea and implementation by providing several helpers, such as `type-visitor`, more on that later
