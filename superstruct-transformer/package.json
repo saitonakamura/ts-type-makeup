@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@types/superstruct": "^0.5.0",
+    "@types/tape": "^4.2.33",
     "superstruct": "^0.6.1"
   },
   "peerDependencies": {

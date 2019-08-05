@@ -1,4 +1,11 @@
-import { TypeChecker, Type, TypeFlags, SymbolFlags } from "typescript";
+import {
+  TypeChecker,
+  Type,
+  TypeFlags,
+  SymbolFlags,
+  BigIntLiteralType,
+  PseudoBigInt
+} from "typescript";
 
 export type TypeModel =
   | TypeModelString
@@ -61,7 +68,7 @@ export interface TypeModelBoolean {
 
 export interface TypeModelEnum {
   readonly kind: "enum";
-  // TODO Any other info for enum
+  readonly values: TypeModel[];
 }
 
 export interface TypeModelBigInt {
@@ -85,12 +92,12 @@ export interface TypeModelBooleanLiteral {
 
 export interface TypeModelEnumLiteral {
   readonly kind: "enumLiteral";
-  readonly value: any; // TODO implement enum literal
+  readonly values: TypeModel[];
 }
 
 export interface TypeModelBigIntLiteral {
   readonly kind: "bigintLiteral";
-  readonly value: BigInt;
+  readonly value: PseudoBigInt;
 }
 
 export interface TypeModelESSymbol {
@@ -162,6 +169,10 @@ export interface TypeModelObject {
 
 export type TypeModelKinds = TypeModel["kind"];
 
+function isBigIntLiteral(type: Type): type is BigIntLiteralType {
+  return !!(type.flags & TypeFlags.BigIntLiteral);
+}
+
 export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
   if (type.flags & TypeFlags.Any) {
     return {
@@ -172,37 +183,6 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
   if (type.flags & TypeFlags.Unknown) {
     return {
       kind: "unknown"
-    };
-  }
-
-  if (type.flags & TypeFlags.String || type.flags & TypeFlags.StringLike) {
-    return {
-      kind: "string"
-    };
-  }
-
-  if (type.flags & TypeFlags.Boolean || type.flags & TypeFlags.BooleanLike) {
-    return {
-      kind: "boolean"
-    };
-  }
-
-  if (type.flags & TypeFlags.Number || type.flags & TypeFlags.NumberLike) {
-    return {
-      kind: "number"
-    };
-  }
-
-  if (type.flags & TypeFlags.Enum || type.flags & TypeFlags.EnumLike) {
-    return {
-      kind: "enum"
-      // TODO any other info for enum
-    };
-  }
-
-  if (type.flags & TypeFlags.BigInt || type.flags & TypeFlags.BigIntLike) {
-    return {
-      kind: "bigint"
     };
   }
 
@@ -229,22 +209,52 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     // };
   }
 
-  if (type.flags & TypeFlags.EnumLiteral) {
-    // TODO implement handle enum literal
-    throw new Error("implement handle enum literal");
-    // return {
-    //   kind: "enumLiteral",
-    //   value: type.value
-    // };
+  if (type.flags & TypeFlags.EnumLiteral && type.isUnion()) {
+    return {
+      kind: "enumLiteral",
+      values: type.types.map(t => typeVisitor(checker, t))
+    };
   }
 
-  if (type.flags & TypeFlags.BigIntLiteral) {
-    // TODO implement handle bigint literal
-    throw new Error("implement handle bigint literal");
-    // return {
-    //   kind: "bigintLiteral",
-    //   value: type.value
-    // };
+  if (isBigIntLiteral(type)) {
+    return {
+      kind: "bigintLiteral",
+      value: type.value
+    };
+  }
+
+  if (type.flags & TypeFlags.String || type.flags & TypeFlags.StringLike) {
+    return {
+      kind: "string"
+    };
+  }
+
+  if (type.flags & TypeFlags.Boolean || type.flags & TypeFlags.BooleanLike) {
+    return {
+      kind: "boolean"
+    };
+  }
+
+  if (type.flags & TypeFlags.Number || type.flags & TypeFlags.NumberLike) {
+    return {
+      kind: "number"
+    };
+  }
+
+  if (
+    (type.flags & TypeFlags.Enum || type.flags & TypeFlags.EnumLike) &&
+    type.isUnion()
+  ) {
+    return {
+      kind: "enum",
+      values: type.types.map(t => typeVisitor(checker, t))
+    };
+  }
+
+  if (type.flags & TypeFlags.BigInt || type.flags & TypeFlags.BigIntLike) {
+    return {
+      kind: "bigint"
+    };
   }
 
   if (type.flags & TypeFlags.ESSymbol || type.flags & TypeFlags.ESSymbolLike) {

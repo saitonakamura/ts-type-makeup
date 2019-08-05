@@ -91,14 +91,26 @@ const createSuperStructValidatorForm = (
     case "void": // void can't be represented in json
     case "never": // never can't be represented in json
     case "typeParameter": // type parameter can't be represented in json
+    case "bigintLiteral": // bigint doesn't have a consistent json representation
+    case "bigint": // bigint doesn't have a consistent json representation
+    case "bigintLiteral": // bigint doesn't have a consistent json representation
       return createSuperstructLiteral({ type: "any", optional });
 
     case "enum":
-      // TODO implement enum superstruct
-      throw new Error("implement enum superstruct");
-
-    case "bigint":
-      return createSuperstructLiteral({ type: "number", optional });
+    case "enumLiteral":
+      return wrapOptional({
+        exp: createSuperstructCall({
+          func: "union",
+          args: [
+            ts.createArrayLiteral(
+              typeModel.values.map(t =>
+                createSuperStructValidatorForm(t, false)
+              )
+            )
+          ]
+        }),
+        optional
+      });
 
     case "string":
       return createSuperstructLiteral({ type: "string", optional });
@@ -135,14 +147,6 @@ const createSuperStructValidatorForm = (
         }),
         optional
       });
-
-    case "enumLiteral":
-      // TODO implement enum literal superstruct
-      throw new Error("implement enum literal superstruct");
-
-    case "bigintLiteral":
-      // TODO implement bigint literal superstruct
-      throw new Error("implement bigint literal superstruct");
 
     case "undefined":
       return createSuperstructLiteral({ type: "undefined", optional });
