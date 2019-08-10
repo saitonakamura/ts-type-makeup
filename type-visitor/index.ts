@@ -4,7 +4,10 @@ import {
   TypeFlags,
   SymbolFlags,
   BigIntLiteralType,
-  PseudoBigInt
+  PseudoBigInt,
+  ObjectType,
+  ObjectFlags,
+  TypeReference
 } from "typescript";
 
 export type TypeModel =
@@ -35,7 +38,8 @@ export type TypeModel =
   | TypeModelIndexedAccess
   | TypeModelConditional
   | TypeModelSubstitution
-  | TypeModelNonPrimitive;
+  | TypeModelNonPrimitive
+  | TypeModelArray;
 
 type MapWithIntersect<TOrig, TAdd> = TOrig extends any ? TOrig & TAdd : never;
 
@@ -167,10 +171,23 @@ export interface TypeModelObject {
   readonly props: Array<TypeModelWithPropFields>;
 }
 
+export interface TypeModelArray {
+  readonly kind: "array";
+  readonly type: TypeModel;
+}
+
 export type TypeModelKinds = TypeModel["kind"];
 
 function isBigIntLiteral(type: Type): type is BigIntLiteralType {
   return !!(type.flags & TypeFlags.BigIntLiteral);
+}
+
+function isObjectType(type: Type): type is ObjectType {
+  return !!(type.flags & TypeFlags.Object);
+}
+
+function isReferenceType(type: ObjectType): type is TypeReference {
+  return !!(type.objectFlags & ObjectFlags.Reference);
 }
 
 export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
@@ -223,7 +240,10 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     };
   }
 
-  if (type.flags & TypeFlags.String || type.flags & TypeFlags.StringLike) {
+  if (
+    type.flags & TypeFlags.String ||
+    (type.flags & TypeFlags.StringLike && !type.isUnion())
+  ) {
     return {
       kind: "string"
     };
@@ -269,7 +289,7 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     };
   }
 
-  if (type.flags & TypeFlags.Void || type.flags & TypeFlags.VoidLike) {
+  if (type.flags & TypeFlags.Void) {
     return {
       kind: "void"
     };
@@ -279,6 +299,10 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     return {
       kind: "undefined"
     };
+  }
+
+  // VoidLike is Undefined or Void, so it's already handled
+  if (type.flags & TypeFlags.VoidLike) {
   }
 
   if (type.flags & TypeFlags.Null) {
@@ -297,6 +321,22 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     return {
       kind: "typeParameter"
     };
+  }
+
+  // Array special handling
+  if (
+    isObjectType(type) &&
+    isReferenceType(type) &&
+    !!type.typeArguments &&
+    type.typeArguments.length > 0
+  ) {
+    const symbol = type.getSymbol();
+    if (!!symbol && symbol.getName() === "Array") {
+      return {
+        kind: "array",
+        type: typeVisitor(checker, type.typeArguments[0])
+      };
+    }
   }
 
   if (type.flags & TypeFlags.Object) {

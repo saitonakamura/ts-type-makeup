@@ -6,16 +6,137 @@ const {
   createValidatorTransformer
 } = require("superstruct-transformer/transformer");
 
-tape("test 1", t => shouldPassValidation(t, "test1.ts", { name: "Me" }));
-
-tape("test 2", t => shouldThrowError(t, "test2.ts"));
-
-tape("test 3", t =>
-  shouldPassValidation(t, "test3.ts", {
-    fieldStr: "test str",
-    fieldNumber: 123,
-    fieldBoolean: true
+tape("test simple object with string field success", t =>
+  shouldPassValidation(t, "test_simpleObjectWithStringField_success.ts", {
+    name: "Me"
   })
+);
+
+tape("test simple object with string field fail", t =>
+  shouldThrowError(t, "test_simpleObjectWithStringField_fail.ts")
+);
+
+tape("test simple object with string, number and boolean fields success", t =>
+  shouldPassValidation(
+    t,
+    "test_simpleObjectWithStringNumberBooleanFields_success.ts",
+    {
+      fieldStr: "test str",
+      fieldNumber: 123,
+      fieldBoolean: true
+    }
+  )
+);
+
+tape(
+  "test simple object with string, number and boolean fields fail because of no string field",
+  t =>
+    shouldThrowError(
+      t,
+      "test_simpleObjectWithStringNumberBooleanFields_failString.ts"
+    )
+);
+
+tape(
+  "test simple object with string, number and boolean fields fail because of no number field",
+  t =>
+    shouldThrowError(
+      t,
+      "test_simpleObjectWithStringNumberBooleanFields_failNumber.ts"
+    )
+);
+
+tape(
+  "test simple object with string, number and boolean fields fail because of no boolean field",
+  t =>
+    shouldThrowError(
+      t,
+      "test_simpleObjectWithStringNumberBooleanFields_failBoolean.ts"
+    )
+);
+
+tape(
+  "test simple object with optional string field success with field present",
+  t =>
+    shouldPassValidation(
+      t,
+      "test_simpleObjectWithOptionalStringField_successWithField.ts",
+      { name: "Me" }
+    )
+);
+
+tape(
+  "test simple object with optional string field success with field missing",
+  t =>
+    shouldPassValidation(
+      t,
+      "test_simpleObjectWithOptionalStringField_successWithoutField.ts",
+      {}
+    )
+);
+
+tape("test simple object with optional string field, fail with number", t =>
+  shouldThrowError(
+    t,
+    "test_simpleObjectWithOptionalStringField_failWithNumber.ts"
+  )
+);
+
+tape("test simple object with string or null field, success with string", t =>
+  shouldPassValidation(
+    t,
+    "test_simpleObjectWithStringOrNullField_successWithString.ts",
+    { name: "Me" }
+  )
+);
+
+tape("test simple object with string or null field, success with null", t =>
+  shouldPassValidation(
+    t,
+    "test_simpleObjectWithStringOrNullField_successWithNull.ts",
+    { name: null }
+  )
+);
+
+tape(
+  "test simple object with string or null field, fail with field missig",
+  t =>
+    shouldThrowError(
+      t,
+      "test_simpleObjectWithStringOrNullField_failWithFieldMissing.ts"
+    )
+);
+
+tape(
+  "test simple object with string field and non strict null checks, success with string",
+  t =>
+    shouldPassValidation(
+      t,
+      "test_simpleObjectWithStringFieldAndNonStrictNullChecks_successWithString.ts",
+      { name: "Me" },
+      false
+    )
+);
+
+tape(
+  "test simple object with string field and non strict null checks, success with null",
+  t =>
+    shouldPassValidation(
+      t,
+      "test_simpleObjectWithStringFieldAndNonStrictNullChecks_successWithNull.ts",
+      { name: null },
+      false
+    )
+);
+
+tape(
+  "test simple object with string field and non strict null checks, fail with field missing",
+  t =>
+    shouldThrowError(
+      t,
+      "test_simpleObjectWithStringFieldAndNonStrictNullChecks_failWithMissingField.ts",
+      false
+    )
 );
 
 tape("test auto enum success", t =>
@@ -52,11 +173,13 @@ tape("test string-initialized enum failure 2", t =>
 
 /**
  * @param {string} filename
+ * @param {boolean} strictNullChecks
  */
-const compile = filename => {
+const compile = (filename, strictNullChecks = true) => {
   const compilerOptions = {
     target: ts.ScriptTarget.ES2015,
-    module: ts.ModuleKind.CommonJS
+    module: ts.ModuleKind.CommonJS,
+    strictNullChecks: strictNullChecks
   };
   const program = ts.createProgram([filename], compilerOptions);
   const fileContent = fs.readFileSync(filename, { encoding: "utf-8" });
@@ -71,11 +194,20 @@ const compile = filename => {
  * @param {tape.Test} t
  * @param {string} filename
  * @param {{}} expectedParsedObj
+ * @param {boolean} strictNullChecks
  */
-function shouldPassValidation(t, filename, expectedParsedObj) {
+function shouldPassValidation(
+  t,
+  filename,
+  expectedParsedObj,
+  strictNullChecks
+) {
   t.plan(1);
 
-  const compiledTsWithTransform = compile(__dirname + "/" + filename);
+  const compiledTsWithTransform = compile(
+    __dirname + "/" + filename,
+    strictNullChecks
+  );
   let tsExports;
 
   try {
@@ -96,11 +228,15 @@ ${compiledTsWithTransform}
 /**
  * @param {tape.Test} t
  * @param {string} filename
+ * @param {boolean} strictNullChecks
  */
-function shouldThrowError(t, filename) {
+function shouldThrowError(t, filename, strictNullChecks) {
   t.plan(1);
 
-  const compiledTsWithTransform = compile(__dirname + "/" + filename);
+  const compiledTsWithTransform = compile(
+    __dirname + "/" + filename,
+    strictNullChecks
+  );
   let tsExports;
 
   try {

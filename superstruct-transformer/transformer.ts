@@ -49,13 +49,8 @@ type SuperstructFunc =
   | "tuple"
   | "union";
 
-const createSuperstructLiteral = ({
-  type: name,
-  optional
-}: {
-  type: SuperstructType;
-  optional: boolean;
-}) => ts.createStringLiteral(name + (optional ? "?" : ""));
+const createSuperstructLiteral = ({ type: name }: { type: SuperstructType }) =>
+  ts.createStringLiteral(name);
 
 const wrapOptional = ({
   exp,
@@ -65,6 +60,39 @@ const wrapOptional = ({
   optional: boolean;
 }) =>
   optional ? createSuperstructCall({ func: "optional", args: [exp] }) : exp;
+
+const wrapNonStrictNullChecks = ({
+  exp,
+  strictNullChecks
+}: {
+  exp: ts.Expression;
+  strictNullChecks: boolean;
+}) =>
+  !strictNullChecks
+    ? createSuperstructCall({
+        func: "union",
+        args: [
+          ts.createArrayLiteral([
+            createSuperstructLiteral({ type: "null" }),
+            exp
+          ])
+        ]
+      })
+    : exp;
+
+const wrapOptionalOrNonStrictNullCheck = ({
+  exp,
+  optional,
+  strictNullChecks
+}: {
+  exp: ts.Expression;
+  optional: boolean;
+  strictNullChecks: boolean;
+}) =>
+  wrapOptional({
+    exp: wrapNonStrictNullChecks({ exp, strictNullChecks }),
+    optional
+  });
 
 const createSuperstructCall = ({
   func,
@@ -81,7 +109,8 @@ const createSuperstructCall = ({
 
 const createSuperStructValidatorForm = (
   typeModel: TypeModel,
-  optional: boolean
+  optional: boolean,
+  strictNullChecks: boolean
 ): ts.Expression => {
   switch (typeModel.kind) {
     case "any":
@@ -94,106 +123,143 @@ const createSuperStructValidatorForm = (
     case "bigintLiteral": // bigint doesn't have a consistent json representation
     case "bigint": // bigint doesn't have a consistent json representation
     case "bigintLiteral": // bigint doesn't have a consistent json representation
-      return createSuperstructLiteral({ type: "any", optional });
+      return createSuperstructLiteral({
+        type: "any"
+      });
 
     case "enum":
     case "enumLiteral":
-      return wrapOptional({
+      return wrapOptionalOrNonStrictNullCheck({
         exp: createSuperstructCall({
           func: "union",
           args: [
             ts.createArrayLiteral(
               typeModel.values.map(t =>
-                createSuperStructValidatorForm(t, false)
+                createSuperStructValidatorForm(t, false, strictNullChecks)
               )
             )
           ]
         }),
-        optional
+        optional,
+        strictNullChecks
       });
 
     case "string":
-      return createSuperstructLiteral({ type: "string", optional });
+      return wrapOptionalOrNonStrictNullCheck({
+        exp: createSuperstructLiteral({ type: "string" }),
+        optional,
+        strictNullChecks
+      });
 
     case "number":
-      return createSuperstructLiteral({ type: "number", optional });
+      return wrapOptionalOrNonStrictNullCheck({
+        exp: createSuperstructLiteral({ type: "number" }),
+        optional,
+        strictNullChecks
+      });
 
     case "boolean":
-      return createSuperstructLiteral({ type: "boolean", optional });
+      return wrapOptionalOrNonStrictNullCheck({
+        exp: createSuperstructLiteral({ type: "boolean" }),
+        optional,
+        strictNullChecks
+      });
 
     case "stringLiteral":
-      return wrapOptional({
+      return wrapOptionalOrNonStrictNullCheck({
         exp: createSuperstructCall({
           func: "literal",
           args: [ts.createLiteral(typeModel.value)]
         }),
-        optional
+        optional,
+        strictNullChecks
       });
 
     case "numberLiteral":
-      return wrapOptional({
+      return wrapOptionalOrNonStrictNullCheck({
         exp: createSuperstructCall({
           func: "literal",
           args: [ts.createLiteral(typeModel.value)]
         }),
-        optional
+        optional,
+        strictNullChecks
       });
 
     case "booleanLiteral":
-      return wrapOptional({
+      return wrapOptionalOrNonStrictNullCheck({
         exp: createSuperstructCall({
           func: "literal",
           args: [ts.createLiteral(typeModel.value)]
         }),
-        optional
+        optional,
+        strictNullChecks
       });
 
     case "undefined":
-      return createSuperstructLiteral({ type: "undefined", optional });
+      return wrapOptionalOrNonStrictNullCheck({
+        exp: createSuperstructLiteral({ type: "undefined" }),
+        optional,
+        strictNullChecks
+      });
 
     case "null":
-      return createSuperstructLiteral({ type: "null", optional });
+      return wrapOptionalOrNonStrictNullCheck({
+        exp: createSuperstructLiteral({ type: "null" }),
+        optional,
+        strictNullChecks
+      });
 
     case "object": {
-      return wrapOptional({
+      return wrapOptionalOrNonStrictNullCheck({
         exp: ts.createObjectLiteral(
           /* properties */
           typeModel.props.map(prop =>
             ts.createPropertyAssignment(
               prop.name,
-              createSuperStructValidatorForm(prop, prop.optional)
+              createSuperStructValidatorForm(
+                prop,
+                prop.optional,
+                strictNullChecks
+              )
             )
           ),
           /* multiline */ true
         ),
-        optional
+        optional,
+        strictNullChecks
       });
     }
 
     case "union":
-      return wrapOptional({
+      return wrapOptionalOrNonStrictNullCheck({
         exp: createSuperstructCall({
           func: "union",
           args: [
             ts.createArrayLiteral(
-              typeModel.types.map(t => createSuperStructValidatorForm(t, false))
+              typeModel.types.map(t =>
+                createSuperStructValidatorForm(t, false, strictNullChecks)
+              )
             )
           ]
         }),
-        optional
+        optional,
+        strictNullChecks
       });
 
     case "intersection":
-      return wrapOptional({
+      return wrapOptionalOrNonStrictNullCheck({
         exp: createSuperstructCall({
           func: "intersection",
           args: [
             ts.createArrayLiteral(
-              typeModel.types.map(t => createSuperStructValidatorForm(t, false))
+              typeModel.types.map(t =>
+                createSuperStructValidatorForm(t, false, strictNullChecks)
+              )
             )
           ]
         }),
-        optional
+        optional,
+        strictNullChecks
       });
 
     case "index":
@@ -218,6 +284,24 @@ const createSuperStructValidatorForm = (
 
     case "unidentified":
       return ts.createStringLiteral("any");
+
+    case "array":
+      return wrapOptionalOrNonStrictNullCheck({
+        exp: createSuperstructCall({
+          func: "list",
+          args: [
+            ts.createArrayLiteral([
+              createSuperStructValidatorForm(
+                typeModel.type,
+                false,
+                strictNullChecks
+              )
+            ])
+          ]
+        }),
+        optional,
+        strictNullChecks
+      });
   }
 
   const _exhaustiveCheck: never = typeModel;
@@ -225,13 +309,18 @@ const createSuperStructValidatorForm = (
 
 const createSuperStructValidator = (
   typeModel: TypeModel,
-  functionName: string
+  functionName: string,
+  strictNullChecks: boolean
 ) => {
   const superstructValidator = ts.createCall(
     /* expression */ createSuperStructDotStructPropAccess(),
     /* typeParameters */ undefined,
     /* arguments */ [
-      createSuperStructValidatorForm(typeModel, /* optional */ false)
+      createSuperStructValidatorForm(
+        typeModel,
+        /* optional */ false,
+        /* strictNullChecks */ strictNullChecks
+      )
     ]
   );
 
@@ -393,7 +482,8 @@ const createVisitor = (
           callsToImplement.map(callToImplement =>
             createSuperStructValidator(
               callToImplement.typeModel,
-              callToImplement.functionName
+              callToImplement.functionName,
+              ctx.getCompilerOptions().strictNullChecks || false
             )
           )
         )
@@ -417,9 +507,19 @@ const createVisitor = (
         ts.isIdentifier(node.expression) &&
         node.expression.text == functionName
       ) {
-        if (!node.typeArguments || node.typeArguments.length < 1) {
+        if (!node.typeArguments || node.typeArguments.length <= 0) {
           return node;
         }
+
+        if (node.arguments.length <= 0) {
+          return node;
+        }
+
+        // if (node.arguments.length <= 2) {
+        //   const a = node.arguments[1];
+        //   const t = checker.getTypeAtLocation(a);
+        //   console.log(JSON.stringify(typeVisitor(checker, t), undefined, " "));
+        // }
 
         const typeToValidateAgainst = checker.getTypeFromTypeNode(
           node.typeArguments[0]
@@ -448,7 +548,7 @@ const createVisitor = (
         return ts.createCall(
           /* expression */ ts.createIdentifier(newFunctionName),
           /* type argmuents */ undefined,
-          /* arguments */ node.arguments
+          /* arguments */ node.arguments.slice(0, 1)
         );
       }
     }
