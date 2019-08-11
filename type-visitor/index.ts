@@ -40,7 +40,8 @@ export type TypeModel =
   | TypeModelConditional
   | TypeModelSubstitution
   | TypeModelNonPrimitive
-  | TypeModelArray;
+  | TypeModelArray
+  | TypeModelTuple;
 
 type MapWithIntersect<TOrig, TAdd> = TOrig extends any ? TOrig & TAdd : never;
 
@@ -185,6 +186,11 @@ export interface TypeModelArray {
   readonly type: TypeModel;
 }
 
+export interface TypeModelTuple {
+  readonly kind: "tuple";
+  readonly types: TypeModel[];
+}
+
 export type TypeModelKinds = TypeModel["kind"];
 
 function isBigIntLiteral(type: Type): type is BigIntLiteralType {
@@ -327,6 +333,20 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
   if (type.flags & TypeFlags.TypeParameter) {
     return {
       kind: "typeParameter"
+    };
+  }
+
+  // Tuple special handling
+  if (
+    isObjectType(type) &&
+    isReferenceType(type) &&
+    type.target.objectFlags & ObjectFlags.Tuple &&
+    !!type.typeArguments &&
+    type.typeArguments.length > 0
+  ) {
+    return {
+      kind: "tuple",
+      types: type.typeArguments.map(t => typeVisitor(checker, t))
     };
   }
 

@@ -359,6 +359,22 @@ const createSuperStructValidatorForm = (
         optional,
         strictNullChecks
       });
+
+    case "tuple":
+      return wrapOptionalOrNonStrictNullCheck({
+        exp: createSuperstructCall({
+          func: "tuple",
+          args: [
+            ts.createArrayLiteral(
+              typeModel.types.map(t =>
+                createSuperStructValidatorForm(t, false, strictNullChecks)
+              )
+            )
+          ]
+        }),
+        optional,
+        strictNullChecks
+      });
   }
 
   const _exhaustiveCheck: never = typeModel;
@@ -581,10 +597,14 @@ const createVisitor = (
         const typeToValidateAgainst = checker.getTypeFromTypeNode(
           node.typeArguments[0]
         );
+
         const typeModel = typeVisitor(checker, typeToValidateAgainst);
-        const typeToValidateAgainstStr = checker.typeToString(
-          typeToValidateAgainst
-        );
+        const typeToValidateAgainstStr = checker
+          .typeToString(typeToValidateAgainst)
+          .replace(/\[/g, "ARRAY_")
+          .replace(/\]/g, "_ENDARRAY")
+          .replace(/\s/g, "_")
+          .replace(/[\,]/g, "");
 
         const newFunctionName = `${functionName}_${typeToValidateAgainstStr}`;
 

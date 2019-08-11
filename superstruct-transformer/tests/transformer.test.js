@@ -388,6 +388,36 @@ tape(
     )
 );
 
+tape("test tuple with string and number, success", t =>
+  shouldPassValidation(t, "test_tupleWithNumberAndString_success.ts", [
+    123,
+    "testStr"
+  ])
+);
+
+tape("test tuple with string and number, fail with third item", t =>
+  shouldThrowError(t, "test_tupleWithNumberAndString_failWithThirdItem.ts")
+);
+
+tape(
+  "test tuple with string and number, fail with messed order [string, number]",
+  t =>
+    shouldThrowError(t, "test_tupleWithNumberAndString_failWithStringNumber.ts")
+);
+
+tape(
+  "test tuple with string and number, fail with string (second one) missing",
+  t =>
+    shouldThrowError(
+      t,
+      "test_tupleWithNumberAndString_failWithStringMissing.ts"
+    )
+);
+
+tape("test array with number, success", t =>
+  shouldPassValidation(t, "test_arrayWithNumber_success.ts", [123, 321])
+);
+
 /**
  * @param {string} filename
  * @param {boolean} strictNullChecks
@@ -410,7 +440,7 @@ const compile = (filename, strictNullChecks = true) => {
 /**
  * @param {tape.Test} t
  * @param {string} filename
- * @param {{}} expectedParsedObj
+ * @param {*} expectedParsedObj
  * @param {boolean} strictNullChecks
  */
 function shouldPassValidation(
