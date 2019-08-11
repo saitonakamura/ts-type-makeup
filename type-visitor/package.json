@@ -1,9 +1,18 @@
 {
-  "name": "type-visitor",
-  "version": "0.0.1",
-  "main": "index.js",
+  "name": "ts-type-visitor",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "module": "module/index.js",
   "author": "Saito Nakamura <michael.bashurov@gmail.com>",
   "license": "MIT",
+  "scripts": {
+    "test": "yarn lint",
+    "watch": "tsc --watch --project ./tsconfig.json",
+    "build": "tsc --project ./tsconfig.json",
+    "build:module": "tsc --project ./tsconfig.module.json",
+    "lint": "tsc --project ./tsconfig.json --noEmit",
+    "prepublishOnly": "yarn test && yarn build && yarn build:module"
+  },
   "peerDependencies": {
     "typescript": "^3.5.2"
   },

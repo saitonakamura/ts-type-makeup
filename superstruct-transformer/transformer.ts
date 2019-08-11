@@ -476,6 +476,8 @@ const findImportedFunctionName = (
 
     return null;
   }
+
+  return null
 };
 
 const createVisitor = (
