@@ -12,6 +12,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
 compile(["./example/example.ts"], {
   noEmitOnError: false,
   noImplicitAny: true,
+  strictNullChecks: true,
   target: ts.ScriptTarget.ES5,
   module: ts.ModuleKind.CommonJS
 });

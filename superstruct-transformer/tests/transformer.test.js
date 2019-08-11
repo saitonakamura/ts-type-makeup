@@ -139,6 +139,60 @@ tape(
     )
 );
 
+tape(
+  "test simple object with optional number field, success with field present",
+  t =>
+    shouldPassValidation(
+      t,
+      "test_simpleObjectWithOptionalNumberField_successWithField.ts",
+      { fieldNumber: 123 }
+    )
+);
+
+tape(
+  "test simple object with optional number field, success with field missing",
+  t =>
+    shouldPassValidation(
+      t,
+      "test_simpleObjectWithOptionalNumberField_successWithoutField.ts",
+      {}
+    )
+);
+
+tape("test simple object with optional number field, fail with string", t =>
+  shouldThrowError(
+    t,
+    "test_simpleObjectWithOptionalNumberField_failWithString.ts"
+  )
+);
+
+tape(
+  "test simple object with optional boolean field, success with field present",
+  t =>
+    shouldPassValidation(
+      t,
+      "test_simpleObjectWithOptionalBooleanField_successWithField.ts",
+      { fieldBoolean: true }
+    )
+);
+
+tape(
+  "test simple object with optional boolean field, success with field missing",
+  t =>
+    shouldPassValidation(
+      t,
+      "test_simpleObjectWithOptionalBooleanField_successWithoutField.ts",
+      {}
+    )
+);
+
+tape("test simple object with optional boolean field, fail with string", t =>
+  shouldThrowError(
+    t,
+    "test_simpleObjectWithOptionalBooleanField_failWithString.ts"
+  )
+);
+
 tape("test auto enum success", t =>
   shouldPassValidation(t, "testEnum1Success.ts", {
     fieldEnum: 2

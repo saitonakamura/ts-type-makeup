@@ -191,6 +191,15 @@ function isReferenceType(type: ObjectType): type is TypeReference {
 }
 
 export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
+  // We're not handling things SomethingLike cause there're unions of flags
+  // and would be handled anyway into more specific types
+  // VoidLike is Undefined or Void,
+  // StringLike is String or StringLiteral
+  // NumberLike is Number or NumberLiteral or Enum
+  // BigIntLike is BigInt or BigIntLiteral
+  // ESSymbolLike is ESSymbol or ESUniqueSymbol
+  // Don't take those ^ definitions too seriously, they're subject to change
+
   if (type.flags & TypeFlags.Any) {
     return {
       kind: "any"
@@ -218,12 +227,11 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
   }
 
   if (type.flags & TypeFlags.BooleanLiteral) {
-    // TODO implement handle boolean literal
-    throw new Error("implement handle boolean literal");
-    // return {
-    //   kind: "booleanLiteral",
-    //   value: type.value
-    // };
+    return {
+      kind: "booleanLiteral",
+      // FIXME It's a dirty hack but i can't seem to find any other way to get a value of BooleanLiteral
+      value: (type as any).intrinsicName === "true"
+    };
   }
 
   if (type.flags & TypeFlags.EnumLiteral && type.isUnion()) {
@@ -240,44 +248,38 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     };
   }
 
-  if (
-    type.flags & TypeFlags.String ||
-    (type.flags & TypeFlags.StringLike && !type.isUnion())
-  ) {
+  if (type.flags & TypeFlags.String && !type.isUnion()) {
     return {
       kind: "string"
     };
   }
 
-  if (type.flags & TypeFlags.Boolean || type.flags & TypeFlags.BooleanLike) {
+  if (type.flags & TypeFlags.Boolean) {
     return {
       kind: "boolean"
     };
   }
 
-  if (type.flags & TypeFlags.Number || type.flags & TypeFlags.NumberLike) {
+  if (type.flags & TypeFlags.Number) {
     return {
       kind: "number"
     };
   }
 
-  if (
-    (type.flags & TypeFlags.Enum || type.flags & TypeFlags.EnumLike) &&
-    type.isUnion()
-  ) {
+  if (type.flags & TypeFlags.Enum && type.isUnion()) {
     return {
       kind: "enum",
       values: type.types.map(t => typeVisitor(checker, t))
     };
   }
 
-  if (type.flags & TypeFlags.BigInt || type.flags & TypeFlags.BigIntLike) {
+  if (type.flags & TypeFlags.BigInt) {
     return {
       kind: "bigint"
     };
   }
 
-  if (type.flags & TypeFlags.ESSymbol || type.flags & TypeFlags.ESSymbolLike) {
+  if (type.flags & TypeFlags.ESSymbol) {
     return {
       kind: "esSymbol"
     };
@@ -299,10 +301,6 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     return {
       kind: "undefined"
     };
-  }
-
-  // VoidLike is Undefined or Void, so it's already handled
-  if (type.flags & TypeFlags.VoidLike) {
   }
 
   if (type.flags & TypeFlags.Null) {
