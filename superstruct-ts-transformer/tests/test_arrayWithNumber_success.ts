@@ -1,4 +1,4 @@
-import { validate } from "superstruct-transformer";
+import { validate } from "superstruct-ts-transformer";
 
 type TestType = number[];
 

@@ -1,5 +1,5 @@
 import ts from "typescript";
-import { createValidatorTransformer } from "superstruct-transformer/transformer";
+import { createValidatorTransformer } from "superstruct-ts-transformer/transformer";
 
 function compile(fileNames: string[], options: ts.CompilerOptions): void {
   let program = ts.createProgram(fileNames, options);

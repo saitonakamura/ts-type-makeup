@@ -491,7 +491,7 @@ const createVisitor = (
     if (
       ts.isImportDeclaration(node) &&
       ts.isStringLiteral(node.moduleSpecifier) &&
-      node.moduleSpecifier.text == "superstruct-transformer" &&
+      node.moduleSpecifier.text == "superstruct-ts-transformer" &&
       !!node.importClause
     ) {
       const nameOfImportedFunction = findImportedFunctionName(
@@ -544,7 +544,7 @@ const createVisitor = (
         );
       } else {
         throw new Error(
-          "superstruct-transformer doesn't support module targets other than CommonJS and ES2015+"
+          "superstruct-ts-transformer doesn't support module targets other than CommonJS and ES2015+"
         );
       }
     }

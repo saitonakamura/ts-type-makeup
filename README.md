@@ -5,8 +5,8 @@
 
 The idea of the project is that since we don't have an access to typescript types in the runtime (they're a subject to a type erasure), we can still emit some code to the runtime on compilation step. So this repository purpose is to
 
-1. Brigde the gap between the idea and implementation by providing several helpers, such as `type-visitor`, more on that later
-2. Provide some ready-made libraries, such as `superstruct-transformer` which a json validation library
+1. Brigde the gap between the idea and implementation by providing several helpers, such as `ts-type-visitor`, more on that later
+2. Provide some ready-made libraries, such as `superstruct-ts-transformer` which a json validation library
 
 ## Superstruct transformer
 

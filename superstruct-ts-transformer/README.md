@@ -58,7 +58,7 @@ No more, no less. Everything that's not representable in json or doesn't have a 
 ## Usage
 
 ```typescript
-// you import validate function from "superstruct-transformer" package
+// you import validate function from "superstruct-ts-transformer" package
 import { validate } from "superstruct-ts-transformer";
 
 // You define or use or import your own type
