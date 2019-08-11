@@ -8,10 +8,12 @@
   "author": "Saito Nakamura <michael.bashurov@gmail.com>",
   "license": "MIT",
   "private": true,
-  "workspaces": [
-    "ts-type-visitor",
-    "superstruct-ts-transformer",
-    "superstruct-ts-transformer/webpack-example",
-    "example"
-  ]
+  "workspaces": {
+    "packages": [
+      "ts-type-visitor",
+      "superstruct-ts-transformer",
+      "example",
+      "superstruct-ts-transformer/webpack-example"
+    ]
+  }
 }

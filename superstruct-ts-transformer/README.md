@@ -95,4 +95,33 @@ Basically just don't be fancy with this function, just import and use it
 
 The usage itself is really consice, injecting custom transformer can be trickier
 
-## Webpack integration
+### Webpack with ts-loader integration
+
+1. Import the transformer
+```js
+```
+2. Add the transformer to the ts-loader config, so it'll look like this
+```js
+{
+  test: /\.tsx?$/,
+  use: [{
+    loader: "ts-loader",
+    options: {
+      // provide your options here if you need it
+      getCustomTransformers: program => ({
+        before: [createValidatorTransformer(program)] // <-- custom transfomer configuration
+      })
+    }
+  }]
+}
+```
+Take a look at [`ts-loader` docs](https://github.com/TypeStrong/ts-loader#options) if in hesitation.
+Also take a look at [tiny webpack example](/webpack-example)
+
+### Webpack with `awesome-typescript-loader` integration
+
+To be written
+
+### `ts-node` integration
+
+To be written
