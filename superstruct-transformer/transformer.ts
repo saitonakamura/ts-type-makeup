@@ -1,5 +1,5 @@
 import ts from "typescript";
-import { TypeModel, typeVisitor } from "type-visitor";
+import { TypeModel, typeVisitor, TypeModelObject } from "type-visitor";
 
 const flatten = <T>(arr: T[][]) =>
   arr.reduce((acc, curr) => [...acc, ...curr], []);
@@ -48,6 +48,24 @@ type SuperstructFunc =
   | "scalar"
   | "tuple"
   | "union";
+
+const createSuperstructObjectLiteralFromProps = ({
+  props,
+  strictNullChecks
+}: {
+  props: TypeModelObject["props"];
+  strictNullChecks: boolean;
+}) =>
+  ts.createObjectLiteral(
+    /* properties */
+    props.map(prop =>
+      ts.createPropertyAssignment(
+        prop.name,
+        createSuperStructValidatorForm(prop, prop.optional, strictNullChecks)
+      )
+    ),
+    /* multiline */ true
+  );
 
 const createSuperstructLiteral = ({ type: name }: { type: SuperstructType }) =>
   ts.createStringLiteral(name);
@@ -209,22 +227,39 @@ const createSuperStructValidatorForm = (
         strictNullChecks
       });
 
-    case "object": {
+    case "objectWithIndex":
       return wrapOptionalOrNonStrictNullCheck({
-        exp: ts.createObjectLiteral(
-          /* properties */
-          typeModel.props.map(prop =>
-            ts.createPropertyAssignment(
-              prop.name,
+        exp: createSuperstructCall({
+          func: "intersection",
+          args: [
+            ts.createArrayLiteral([
+              createSuperstructCall({
+                func: "interface",
+                args: [
+                  createSuperstructObjectLiteralFromProps({
+                    props: typeModel.props,
+                    strictNullChecks
+                  })
+                ]
+              }),
               createSuperStructValidatorForm(
-                prop,
-                prop.optional,
+                typeModel.index,
+                false,
                 strictNullChecks
               )
-            )
-          ),
-          /* multiline */ true
-        ),
+            ])
+          ]
+        }),
+        optional,
+        strictNullChecks
+      });
+
+    case "object": {
+      return wrapOptionalOrNonStrictNullCheck({
+        exp: createSuperstructObjectLiteralFromProps({
+          props: typeModel.props,
+          strictNullChecks
+        }),
         optional,
         strictNullChecks
       });
@@ -246,6 +281,32 @@ const createSuperStructValidatorForm = (
         strictNullChecks
       });
 
+    case "index":
+      if (typeModel.keyType.kind === "number") {
+        // number object keys can't represented in json
+        return createSuperstructLiteral({
+          type: "any"
+        });
+      } else {
+        return wrapOptionalOrNonStrictNullCheck({
+          exp: createSuperstructCall({
+            func: "dict",
+            args: [
+              ts.createArrayLiteral([
+                createSuperStructValidatorForm(typeModel.keyType, false, true),
+                createSuperStructValidatorForm(
+                  typeModel.valueType,
+                  false,
+                  strictNullChecks
+                )
+              ])
+            ]
+          }),
+          optional,
+          strictNullChecks
+        });
+      }
+
     case "intersection":
       return wrapOptionalOrNonStrictNullCheck({
         exp: createSuperstructCall({
@@ -256,21 +317,6 @@ const createSuperStructValidatorForm = (
                 createSuperStructValidatorForm(t, false, strictNullChecks)
               )
             )
-          ]
-        }),
-        optional,
-        strictNullChecks
-      });
-
-    case "index":
-      return wrapOptionalOrNonStrictNullCheck({
-        exp: createSuperstructCall({
-          func: "dict",
-          args: [
-            ts.createArrayLiteral([
-              createSuperStructValidatorForm(typeModel.keyType, false, true),
-              createSuperStructValidatorForm(typeModel.valueType, false, true)
-            ])
           ]
         }),
         optional,

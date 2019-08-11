@@ -15,6 +15,7 @@ export type TypeModel =
   | TypeModelBoolean
   | TypeModelNumber
   | TypeModelObject
+  | TypeModelObjectWithIndex
   | TypeModelUnidentified
   | TypeModelAny
   | TypeModelUnknown
@@ -144,7 +145,7 @@ export interface TypeModelIntersection {
 
 export interface TypeModelIndex {
   readonly kind: "index";
-  readonly keyType: TypeModelString | TypeModelNumber;
+  readonly keyType: TypeModelUnion | TypeModelString | TypeModelNumber;
   readonly valueType: TypeModel;
 }
 
@@ -171,6 +172,12 @@ export interface TypeModelUnidentified {
 export interface TypeModelObject {
   readonly kind: "object";
   readonly props: Array<TypeModelWithPropFields>;
+}
+
+export interface TypeModelObjectWithIndex {
+  readonly kind: "objectWithIndex";
+  readonly props: Array<TypeModelWithPropFields>;
+  readonly index: TypeModelIndex;
 }
 
 export interface TypeModelArray {
@@ -339,30 +346,6 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     }
   }
 
-  // string index type
-  if (type.flags & TypeFlags.Object) {
-    const stringIndexType = type.getStringIndexType();
-    if (!!stringIndexType) {
-      return {
-        kind: "index",
-        keyType: { kind: "string" },
-        valueType: typeVisitor(checker, stringIndexType)
-      };
-    }
-  }
-
-  // string index type
-  if (type.flags & TypeFlags.Object) {
-    const numberIndexType = type.getNumberIndexType();
-    if (!!numberIndexType) {
-      return {
-        kind: "index",
-        keyType: { kind: "number" },
-        valueType: typeVisitor(checker, numberIndexType)
-      };
-    }
-  }
-
   if (type.flags & TypeFlags.Object) {
     const props = type.getProperties();
     const propsDescriptor = props.map(prop => ({
@@ -373,6 +356,49 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
         checker.getTypeOfSymbolAtLocation(prop, prop.valueDeclaration)
       )
     }));
+
+    // index types
+    const stringIndexType = type.getStringIndexType();
+    const numberIndexType = type.getNumberIndexType();
+
+    if (!!stringIndexType && !!numberIndexType) {
+      return {
+        kind: "objectWithIndex",
+        props: propsDescriptor,
+        index: {
+          kind: "index",
+          keyType: {
+            kind: "union",
+            types: [{ kind: "string" }, { kind: "number" }]
+          },
+          valueType: typeVisitor(checker, stringIndexType)
+        }
+      };
+    }
+
+    if (!!numberIndexType) {
+      return {
+        kind: "objectWithIndex",
+        props: propsDescriptor,
+        index: {
+          kind: "index",
+          keyType: { kind: "number" },
+          valueType: typeVisitor(checker, numberIndexType)
+        }
+      };
+    }
+
+    if (!!stringIndexType) {
+      return {
+        kind: "objectWithIndex",
+        props: propsDescriptor,
+        index: {
+          kind: "index",
+          keyType: { kind: "string" },
+          valueType: typeVisitor(checker, stringIndexType)
+        }
+      };
+    }
 
     return {
       kind: "object",

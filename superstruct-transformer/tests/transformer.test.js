@@ -341,6 +341,53 @@ tape("test object with string index access, fail with one of keys number", t =>
   shouldThrowError(t, "test_objectWithStringIndex_failWithNumberIndex.ts")
 );
 
+tape("test object with mandatory field and string index access, success", t =>
+  shouldPassValidation(t, "test_objectWithStringIndexAndFields_success.ts", {
+    fieldNumber: 123,
+    field1: 123,
+    field2: 321
+  })
+);
+
+tape(
+  "test object with mandatory field and string index access, success with no index fields",
+  t =>
+    shouldPassValidation(
+      t,
+      "test_objectWithStringIndexAndFields_successWithNoIndexFields.ts",
+      {
+        fieldNumber: 123
+      }
+    )
+);
+
+tape(
+  "test object with mandatory field and string index access, fail with field missing",
+  t =>
+    shouldThrowError(
+      t,
+      "test_objectWithStringIndexAndFields_failWithFieldMissing.ts"
+    )
+);
+
+tape(
+  "test object with mandatory number field and string index access, fail with mandatory field with string",
+  t =>
+    shouldThrowError(
+      t,
+      "test_objectWithStringIndexAndFields_failWithFieldWithString.ts"
+    )
+);
+
+tape(
+  "test object with mandatory number field and string index access, fail with index field with string",
+  t =>
+    shouldThrowError(
+      t,
+      "test_objectWithStringIndexAndFields_failWithIndexFieldWithString.ts"
+    )
+);
+
 /**
  * @param {string} filename
  * @param {boolean} strictNullChecks
