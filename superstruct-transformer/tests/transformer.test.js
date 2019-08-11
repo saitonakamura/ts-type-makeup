@@ -107,6 +107,56 @@ tape(
     )
 );
 
+tape("test simple object with number or null field, success with number", t =>
+  shouldPassValidation(
+    t,
+    "test_simpleObjectWithNumberOrNullField_successWithNumber.ts",
+    { fieldNumber: 123 }
+  )
+);
+
+tape("test simple object with number or null field, success with null", t =>
+  shouldPassValidation(
+    t,
+    "test_simpleObjectWithNumberOrNullField_successWithNull.ts",
+    { fieldNumber: null }
+  )
+);
+
+tape(
+  "test simple object with number or null field, fail with field missing",
+  t =>
+    shouldThrowError(
+      t,
+      "test_simpleObjectWithNumberOrNullField_failWithFieldMissing.ts"
+    )
+);
+
+tape("test simple object with boolean or null field, success with boolean", t =>
+  shouldPassValidation(
+    t,
+    "test_simpleObjectWithBooleanOrNullField_successWithBoolean.ts",
+    { fieldBoolean: true }
+  )
+);
+
+tape("test simple object with boolean or null field, success with null", t =>
+  shouldPassValidation(
+    t,
+    "test_simpleObjectWithBooleanOrNullField_successWithNull.ts",
+    { fieldBoolean: null }
+  )
+);
+
+tape(
+  "test simple object with boolean or null field, fail with field missing",
+  t =>
+    shouldThrowError(
+      t,
+      "test_simpleObjectWithBooleanOrNullField_failWithFieldMissing.ts"
+    )
+);
+
 tape(
   "test simple object with string field and non strict null checks, success with string",
   t =>
@@ -223,6 +273,48 @@ tape("test string-initialized enum failure 1", t =>
 
 tape("test string-initialized enum failure 2", t =>
   shouldThrowError(t, "testEnum3Fail2.ts")
+);
+
+tape("test with hierarchical object, success", t =>
+  shouldPassValidation(t, "test_hierachicalObjects_success.ts", {
+    fieldChild: { fieldNumber: 123 }
+  })
+);
+
+tape("test with hierarchical object, fail with child missing", t =>
+  shouldThrowError(t, "test_hierachicalObjects_failWithChildMissing.ts")
+);
+
+tape("test with hierarchical object, fail with child null", t =>
+  shouldThrowError(t, "test_hierachicalObjects_failWithChildNull.ts")
+);
+
+tape("test with hierarchical object, fail with child with string", t =>
+  shouldThrowError(t, "test_hierachicalObjects_failWithChildWithString.ts")
+);
+
+tape("test with object with array, success with number array", t =>
+  shouldPassValidation(t, "test_objectWithNumberArray_success.ts", {
+    fieldArray: [123, 321]
+  })
+);
+
+tape("test with object with array, success with empty array", t =>
+  shouldPassValidation(
+    t,
+    "test_objectWithNumberArray_successWithEmptyArray.ts",
+    {
+      fieldArray: []
+    }
+  )
+);
+
+tape("test with object with array, fail with string array", t =>
+  shouldThrowError(t, "test_objectWithNumberArray_failWithStringArray.ts")
+);
+
+tape("test with object with array, fail with null", t =>
+  shouldThrowError(t, "test_objectWithNumberArray_failWithNull.ts")
 );
 
 /**

@@ -248,7 +248,7 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     };
   }
 
-  if (type.flags & TypeFlags.String && !type.isUnion()) {
+  if (type.flags & TypeFlags.String) {
     return {
       kind: "string"
     };
