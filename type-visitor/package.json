@@ -13,6 +13,15 @@
     "lint": "tsc --project ./tsconfig.json --noEmit",
     "prepublishOnly": "yarn test && yarn build && yarn build:module"
   },
+  "keywords": ["typescript", "typescript-transformer", "typescript-compiler-api"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/saitonakamura/ts-type-makeup/tree/master/type-visitor"
+  },
+  "bugs": {
+    "url": "https://github.com/saitonakamura/ts-type-makeup/issues"
+  },
+  "homepage": "https://github.com/saitonakamura/ts-type-makeup/tree/master/type-visitor#readme",
   "peerDependencies": {
     "typescript": "^3.5.2"
   },
