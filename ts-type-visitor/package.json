@@ -20,12 +20,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/saitonakamura/ts-type-makeup/tree/master/type-visitor"
+    "url": "git+https://github.com/saitonakamura/ts-type-makeup.git"
   },
   "bugs": {
     "url": "https://github.com/saitonakamura/ts-type-makeup/issues"
   },
-  "homepage": "https://github.com/saitonakamura/ts-type-makeup/tree/master/type-visitor#readme",
+  "homepage": "https://github.com/saitonakamura/ts-type-makeup/tree/master/ts-type-visitor#readme",
   "peerDependencies": {
     "typescript": "^3.5.2"
   },
