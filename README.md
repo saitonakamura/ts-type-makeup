@@ -10,6 +10,8 @@ The idea of the project is that since we don't have an access to typescript type
 
 ## Superstruct transformer
 
+[Superstruct transformer Docs](/superstruct-transformer#readme)
+
 It's a typescript transformer that will transforms `validate<MyType>(JSON.parse("{}"))` calls to an actual `superstruct` json validator
 
 You write that code
@@ -40,12 +42,10 @@ function validate_User(jsonObj) {
 }
 ```
 
-### Current limitations
-
-- You can't use babel-only transpilation (you can use babel, but you need to compile by typescript first)
-- You can't use `tsc`, because `tsc` doesn't support custom transformers
-- You can't module targets other that `CommonJS`, `es2015` and `esnext`
+Looks cool, right? However it comes with a lot of limitations, take a look at the [docs](/superstruct-transformer#readme)
 
 ## Type visitor
 
-It's a visitor function for a type that gives you an easy-to-use (unlike typescript api) type tree. You can traverse it to either analyze it somehow or to emit someting to the runtime (e.g. json validation, react prop-types etc.)
+[Type visitor Docs](/ts-type-visitor#readme)
+
+It's a visitor function for a type that gives you an easy-to-use (unlike typescript api) type tree. You can traverse it to either analyze it somehow or to emit someting to the runtime (e.g. json validation, react prop-types etc.). See [docs](/ts-type-visitor#readme) for more info.
