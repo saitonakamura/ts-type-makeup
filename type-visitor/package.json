@@ -1,6 +1,6 @@
 {
   "name": "ts-type-visitor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "dist/index.js",
   "module": "module/index.js",
   "author": "Saito Nakamura <michael.bashurov@gmail.com>",
@@ -13,7 +13,11 @@
     "lint": "tsc --project ./tsconfig.json --noEmit",
     "prepublishOnly": "yarn test && yarn build && yarn build:module"
   },
-  "keywords": ["typescript", "typescript-transformer", "typescript-compiler-api"],
+  "keywords": [
+    "typescript",
+    "typescript-transformer",
+    "typescript-compiler-api"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/saitonakamura/ts-type-makeup/tree/master/type-visitor"
