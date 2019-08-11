@@ -263,8 +263,19 @@ const createSuperStructValidatorForm = (
       });
 
     case "index":
-      // TODO implement index superstruct
-      throw new Error("implement index superstruct");
+      return wrapOptionalOrNonStrictNullCheck({
+        exp: createSuperstructCall({
+          func: "dict",
+          args: [
+            ts.createArrayLiteral([
+              createSuperStructValidatorForm(typeModel.keyType, false, true),
+              createSuperStructValidatorForm(typeModel.valueType, false, true)
+            ])
+          ]
+        }),
+        optional,
+        strictNullChecks
+      });
 
     case "indexedAccess":
       // TODO implement indexedAccess superstruct

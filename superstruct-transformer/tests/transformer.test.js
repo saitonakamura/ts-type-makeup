@@ -275,31 +275,31 @@ tape("test string-initialized enum failure 2", t =>
   shouldThrowError(t, "testEnum3Fail2.ts")
 );
 
-tape("test with hierarchical object, success", t =>
+tape("test hierarchical object, success", t =>
   shouldPassValidation(t, "test_hierachicalObjects_success.ts", {
     fieldChild: { fieldNumber: 123 }
   })
 );
 
-tape("test with hierarchical object, fail with child missing", t =>
+tape("test hierarchical object, fail with child missing", t =>
   shouldThrowError(t, "test_hierachicalObjects_failWithChildMissing.ts")
 );
 
-tape("test with hierarchical object, fail with child null", t =>
+tape("test hierarchical object, fail with child null", t =>
   shouldThrowError(t, "test_hierachicalObjects_failWithChildNull.ts")
 );
 
-tape("test with hierarchical object, fail with child with string", t =>
+tape("test hierarchical object, fail with child with string", t =>
   shouldThrowError(t, "test_hierachicalObjects_failWithChildWithString.ts")
 );
 
-tape("test with object with array, success with number array", t =>
+tape("test object with array, success with number array", t =>
   shouldPassValidation(t, "test_objectWithNumberArray_success.ts", {
     fieldArray: [123, 321]
   })
 );
 
-tape("test with object with array, success with empty array", t =>
+tape("test object with array, success with empty array", t =>
   shouldPassValidation(
     t,
     "test_objectWithNumberArray_successWithEmptyArray.ts",
@@ -309,12 +309,36 @@ tape("test with object with array, success with empty array", t =>
   )
 );
 
-tape("test with object with array, fail with string array", t =>
+tape("test object with array, fail with string array", t =>
   shouldThrowError(t, "test_objectWithNumberArray_failWithStringArray.ts")
 );
 
-tape("test with object with array, fail with null", t =>
+tape("test object with array, fail with null", t =>
   shouldThrowError(t, "test_objectWithNumberArray_failWithNull.ts")
+);
+
+tape("test object with string index access, success", t =>
+  shouldPassValidation(t, "test_objectWithStringIndex_success.ts", {
+    field1: 123,
+    field2: 321
+  })
+);
+
+tape("test object with string index access, success with empty object", t =>
+  shouldPassValidation(
+    t,
+    "test_objectWithStringIndex_successWithEmptyObj.ts",
+    {}
+  )
+);
+
+tape(
+  "test object with string index access, fail with one of values boolean",
+  t => shouldThrowError(t, "test_objectWithStringIndex_failWithBoolean.ts")
+);
+
+tape("test object with string index access, fail with one of keys number", t =>
+  shouldThrowError(t, "test_objectWithStringIndex_failWithNumberIndex.ts")
 );
 
 /**

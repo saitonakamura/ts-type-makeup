@@ -144,6 +144,8 @@ export interface TypeModelIntersection {
 
 export interface TypeModelIndex {
   readonly kind: "index";
+  readonly keyType: TypeModelString | TypeModelNumber;
+  readonly valueType: TypeModel;
 }
 
 export interface TypeModelIndexedAccess {
@@ -337,6 +339,30 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     }
   }
 
+  // string index type
+  if (type.flags & TypeFlags.Object) {
+    const stringIndexType = type.getStringIndexType();
+    if (!!stringIndexType) {
+      return {
+        kind: "index",
+        keyType: { kind: "string" },
+        valueType: typeVisitor(checker, stringIndexType)
+      };
+    }
+  }
+
+  // string index type
+  if (type.flags & TypeFlags.Object) {
+    const numberIndexType = type.getNumberIndexType();
+    if (!!numberIndexType) {
+      return {
+        kind: "index",
+        keyType: { kind: "number" },
+        valueType: typeVisitor(checker, numberIndexType)
+      };
+    }
+  }
+
   if (type.flags & TypeFlags.Object) {
     const props = type.getProperties();
     const propsDescriptor = props.map(prop => ({
@@ -368,11 +394,12 @@ export const typeVisitor = (checker: TypeChecker, type: Type): TypeModel => {
     };
   }
 
-  if (type.flags & TypeFlags.Index) {
-    return {
-      kind: "index"
-    };
-  }
+  // TODO Find out where i can meet TypeFlags.Index
+  // if (type.flags & TypeFlags.Index) {
+  //   return {
+  //     kind: "index"
+  //   };
+  // }
 
   if (type.flags & TypeFlags.IndexedAccess) {
     return {
