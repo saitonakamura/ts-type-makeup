@@ -17,7 +17,8 @@
   "dependencies": {
     "@types/superstruct": "^0.5.0",
     "@types/tape": "^4.2.33",
-    "superstruct": "^0.6.1"
+    "superstruct": "^0.6.1",
+    "ts-type-visitor": "^0.1.1"
   },
   "peerDependencies": {
     "typescript": "^3.5.2"

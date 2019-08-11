@@ -9,7 +9,7 @@
   "license": "MIT",
   "private": true,
   "workspaces": [
-    "type-visitor",
+    "ts-type-visitor",
     "superstruct-transformer",
     "example"
   ]

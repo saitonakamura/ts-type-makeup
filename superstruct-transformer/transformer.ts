@@ -1,5 +1,5 @@
 import ts from "typescript";
-import { TypeModel, typeVisitor, TypeModelObject } from "type-visitor";
+import { TypeModel, typeVisitor, TypeModelObject } from "ts-type-visitor";
 
 const flatten = <T>(arr: T[][]) =>
   arr.reduce((acc, curr) => [...acc, ...curr], []);
