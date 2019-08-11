@@ -10,7 +10,8 @@
   "private": true,
   "workspaces": [
     "ts-type-visitor",
-    "superstruct-transformer",
+    "superstruct-ts-transformer",
+    "superstruct-ts-transformer/webpack-example",
     "example"
   ]
 }

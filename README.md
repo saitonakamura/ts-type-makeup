@@ -10,14 +10,14 @@ The idea of the project is that since we don't have an access to typescript type
 
 ## Superstruct transformer
 
-[Superstruct transformer Docs](/superstruct-transformer#readme)
+[Superstruct transformer Docs](/superstruct-ts-transformer#readme)
 
 It's a typescript transformer that will transforms `validate<MyType>(JSON.parse("{}"))` calls to an actual `superstruct` json validator
 
 You write that code
 
 ```typescript
-import { validate } from "superstruct-transformer";
+import { validate } from "superstruct-ts-transformer";
 
 type User = {
   name: string;
@@ -42,7 +42,7 @@ function validate_User(jsonObj) {
 }
 ```
 
-Looks cool, right? However it comes with a lot of limitations, take a look at the [docs](/superstruct-transformer#readme)
+Looks cool, right? However it comes with a lot of limitations, take a look at the [docs](/superstruct-ts-transformer#readme)
 
 ## Type visitor
 

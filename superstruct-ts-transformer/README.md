@@ -5,7 +5,7 @@ It's a typescript transformer that will transforms `validate<MyType>(JSON.parse(
 You write that code:
 
 ```typescript
-import { validate } from "superstruct-transformer";
+import { validate } from "superstruct-ts-transformer";
 
 type User = {
   name: string;
@@ -59,7 +59,7 @@ No more, no less. Everything that's not representable in json or doesn't have a 
 
 ```typescript
 // you import validate function from "superstruct-transformer" package
-import { validate } from "superstruct-transformer";
+import { validate } from "superstruct-ts-transformer";
 
 // You define or use or import your own type
 type User = {
@@ -85,7 +85,7 @@ const myValidate = <T>(jsonStr: string) => validate<T>(JSON.parse(jsonStr));
 And don't do this
 
 ```ts
-import { validate } from "superstruct-transformer";
+import { validate } from "superstruct-ts-transformer";
 export default validate;
 ```
 
