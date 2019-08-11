@@ -99,6 +99,10 @@ The usage itself is really consice, injecting custom transformer can be trickier
 
 1. Import the transformer
 ```js
+// Mind the destucturing
+const {
+  createValidatorTransformer
+} = require("superstruct-ts-transformer/dist/transformer");
 ```
 2. Add the transformer to the ts-loader config, so it'll look like this
 ```js
@@ -116,7 +120,7 @@ The usage itself is really consice, injecting custom transformer can be trickier
 }
 ```
 Take a look at [`ts-loader` docs](https://github.com/TypeStrong/ts-loader#options) if in hesitation.
-Also take a look at [tiny webpack example](/webpack-example)
+Also take a look at [tiny webpack example](/superstruct-ts-transformer/webpack-example)
 
 ### Webpack with `awesome-typescript-loader` integration
 
