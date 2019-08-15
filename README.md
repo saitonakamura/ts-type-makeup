@@ -1,4 +1,6 @@
-# Typescript makeup aka Compile-time type-based emitters
+# Typescript type makeup
+
+AKA Compile-time type-based transformers
 
 ## ⚠️ Moved to separate repos in [Typescript Type Makeup org](https://github.com/ts-type-makeup) ⚠️
 
@@ -9,6 +11,10 @@ The idea of the project is that since we don't have an access to typescript type
 
 1. Brigde the gap between the idea and implementation by providing several helpers, such as `ts-type-visitor`, more on that later
 2. Provide some ready-made libraries, such as `superstruct-ts-transformer` which a json validation library
+
+## Why makeup?
+
+Because what makeup is that you wake up in the morning (compile time), go to the mirror (reflection) and do beautiful things (transformers) with your face (code). In the same manner we're using compile-time reflection on types via compiler api and do beautiful things out of them!
 
 ## Superstruct transformer
 
