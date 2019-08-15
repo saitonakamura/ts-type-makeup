@@ -1,5 +1,7 @@
 # Typescript makeup aka Compile-time type-based emitters
 
+## ⚠️ Moved to separate repos in [Typescript Type Makeup org](https://github.com/ts-type-makeup) ⚠️
+
 <img src="/logo.svg" align="right"
      alt="Blue lipstick with a TS on it" height="180">
 
